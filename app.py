@@ -5,7 +5,7 @@ import streamlit as st
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(HERE)                             # the "My Project" folder
-OUT_DIR = os.path.join(ROOT, "outputs")              # Model 1 output
+OUT_DIR = os.path.join(HERE, "outputs")              # Model 1 output
 
 MECH = {"LLI": "LLI (lost lithium)", "LAM_PE": "LAM-PE (positive side)",
         "LAM_NE": "LAM-NE (negative side)", "RES": "Resistance growth"}
