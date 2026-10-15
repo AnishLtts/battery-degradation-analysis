@@ -19,6 +19,22 @@ this Project develops a data driven battery degradation analysis pipeline using 
 
 The system is divided into two main components: 
 
-Model 1: Degradation mechanism Diagnosis 
+MODEL 1: Degradation mechanism Diagnosis 
+
+Model 1 focuses on identifying the dominant degradation mechanism for each analysed battery cycles.
+
+The results are presented through the stream lit dashboard together with a confidence score, allowing degradation behaviour to be inspected across battery cycles. 
+
+MODEL 2: Degradation Contribution Analysis
+
+Model 2 focuses on analysis how different degradation mechanism contribute to overall battery degradation 
+
+This complements Model 1 by moving form:
+
+"Which degradation mechanism is occurring?"
+
+to
+
+"How much does each mechanism contribute?"
 
 
