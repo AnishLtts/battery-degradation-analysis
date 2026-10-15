@@ -18,6 +18,7 @@ Understanding not only how much degradation has occurred, but also the underlyin
 this Project develops a data driven battery degradation analysis pipeline using battery ageing data.
 
 The system is divided into two main components: 
+
 Model 1: Degradation mechanism Diagnosis 
 
 
