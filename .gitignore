@@ -11,3 +11,5 @@ Thumbs.db
 data/5. Battery Data Set/
 *.zip
 | Set-Content .gitignore -Encoding utf8
+# Generated battery analysis outputs
+battery_degradation_project/battery_intelligence_platform/outputs/
