@@ -1,12 +1,11 @@
 from pathlib import Path
 import sys
 
-import numpy as np
 import pandas as pd
 
 
 # ============================================================
-# LOCATE PROJECT FOLDERS
+# PROJECT PATHS
 # ============================================================
 
 CURRENT_FILE = Path(__file__).resolve()
@@ -31,7 +30,7 @@ sys.path.insert(
 
 
 # ============================================================
-# IMPORT CORE MODULES
+# CORE IMPORTS
 # ============================================================
 
 from file_reader import load_battery_dataset
@@ -41,9 +40,15 @@ from column_mapper import (
     detect_column_mapping,
 )
 
+from unit_normalizer import (
+    normalize_dataset_units,
+    validate_normalized_ranges,
+    save_normalized_results,
+)
+
 
 # ============================================================
-# IMPORT DIAGNOSTIC MODULES
+# DIAGNOSTIC IMPORTS
 # ============================================================
 
 from voltage_diagnostics import (
@@ -68,7 +73,7 @@ from capacity_diagnostics import (
 
 
 # ============================================================
-# PROFILER CONFIGURATION
+# CONFIGURATION
 # ============================================================
 
 EXPECTED_COLUMNS = [
@@ -92,14 +97,13 @@ NUMERIC_COLUMNS = [
 
 
 # ============================================================
-# CONVERT AVAILABLE COLUMNS TO NUMERIC
+# NUMERIC CONVERSION
 # ============================================================
 
 def convert_numeric_columns(dataframe):
     """
-    Convert recognized measurement columns to numeric values.
-
-    Values that cannot be converted become missing values.
+    Convert recognized battery measurement columns to numeric
+    values. Invalid values become missing values.
     """
     converted_data = dataframe.copy()
 
@@ -119,105 +123,97 @@ def convert_numeric_columns(dataframe):
 
 def detect_suspected_units(dataframe):
     """
-    Detect likely measurement units using value ranges.
+    Estimate measurement units using engineering value ranges.
 
-    These are engineering heuristics, not guaranteed unit
-    identifications.
+    These are warnings and estimates only. Unit conversion is
+    handled separately by unit_normalizer.py when the unit is
+    explicit in the original column name.
     """
     detected_units = {}
     warnings = []
 
-    # --------------------------------------------------------
-    # VOLTAGE
-    # --------------------------------------------------------
-
+    # Voltage
     if "voltage_v" in dataframe.columns:
-        voltage_values = dataframe[
+        values = dataframe[
             "voltage_v"
         ].dropna()
 
-        if voltage_values.empty:
+        if values.empty:
             detected_units["voltage"] = "Unknown"
 
         else:
-            median_voltage = float(
-                voltage_values.abs().median()
+            median_value = float(
+                values.abs().median()
             )
 
-            maximum_voltage = float(
-                voltage_values.abs().max()
+            maximum_value = float(
+                values.abs().max()
             )
 
-            if 500 <= median_voltage <= 6000:
+            if 500 <= median_value <= 6000:
                 detected_units["voltage"] = (
                     "Likely millivolts (mV)"
                 )
 
                 warnings.append(
-                    "Voltage values appear to be in millivolts. "
-                    "Conversion to volts may be required."
+                    "Voltage values may still be in millivolts."
                 )
 
-            elif 0.5 <= median_voltage <= 10:
+            elif 0.5 <= median_value <= 10:
                 detected_units["voltage"] = (
                     "Likely volts (V)"
                 )
 
-            elif maximum_voltage > 10:
+            elif maximum_value > 10:
                 detected_units["voltage"] = (
                     "Unknown or pack-level voltage"
                 )
 
                 warnings.append(
-                    "Voltage values are above a typical "
-                    "single-cell range. The dataset may contain "
-                    "pack-level voltage or different units."
+                    "Voltage is above a typical single-cell "
+                    "range. Confirm whether the dataset contains "
+                    "pack-level voltage."
                 )
 
             else:
                 detected_units["voltage"] = "Unknown"
 
                 warnings.append(
-                    "Voltage units could not be identified "
-                    "reliably."
+                    "Voltage units could not be identified."
                 )
 
     else:
         detected_units["voltage"] = "Unavailable"
 
-    # --------------------------------------------------------
-    # CURRENT
-    # --------------------------------------------------------
-
+    # Current
     if "current_a" in dataframe.columns:
-        current_values = dataframe[
+        values = dataframe[
             "current_a"
         ].dropna()
 
-        nonzero_current = current_values[
-            current_values.abs() > 0.0001
+        active_values = values[
+            values.abs() > 0.0001
         ]
 
-        if nonzero_current.empty:
+        if active_values.empty:
             detected_units["current"] = "Unknown"
 
         else:
-            median_current = float(
-                nonzero_current.abs().median()
+            median_value = float(
+                active_values.abs().median()
             )
 
-            if median_current >= 100:
+            if median_value >= 100:
                 detected_units["current"] = (
                     "Likely milliamperes (mA)"
                 )
 
                 warnings.append(
-                    "Current values appear to be in "
-                    "milliamperes. Conversion to amperes may "
-                    "be required."
+                    "Current values may still be in "
+                    "milliamperes."
                 )
 
-            elif median_current <= 50:
+            elif median_value <= 50:
                 detected_units["current"] = (
                     "Likely amperes (A)"
                 )
@@ -228,49 +224,45 @@ def detect_suspected_units(dataframe):
                 )
 
                 warnings.append(
-                    "Current values may represent a high-current "
-                    "cell or battery pack. Confirm the units."
+                    "Current units or system scale require "
+                    "confirmation."
                 )
 
     else:
         detected_units["current"] = "Unavailable"
 
-    # --------------------------------------------------------
-    # CAPACITY
-    # --------------------------------------------------------
-
+    # Capacity
     if "capacity_ah" in dataframe.columns:
-        capacity_values = dataframe[
+        values = dataframe[
             "capacity_ah"
         ].dropna()
 
-        positive_capacity = capacity_values[
-            capacity_values > 0
+        positive_values = values[
+            values > 0
         ]
 
-        if positive_capacity.empty:
+        if positive_values.empty:
             detected_units["capacity"] = "Unknown"
 
         else:
-            median_capacity = float(
-                positive_capacity.median()
+            median_value = float(
+                positive_values.median()
             )
 
-            maximum_capacity = float(
-                positive_capacity.max()
+            maximum_value = float(
+                positive_values.max()
             )
 
-            if median_capacity >= 100:
+            if median_value >= 100:
                 detected_units["capacity"] = (
                     "Likely milliampere-hours (mAh)"
                 )
 
                 warnings.append(
-                    "Capacity values appear to be in mAh. "
-                    "Conversion to Ah may be required."
+                    "Capacity values may still be in mAh."
                 )
 
-            elif maximum_capacity <= 20:
+            elif maximum_value <= 20:
                 detected_units["capacity"] = (
                     "Likely ampere-hours (Ah)"
                 )
@@ -281,23 +273,20 @@ def detect_suspected_units(dataframe):
                 )
 
                 warnings.append(
-                    "Capacity may represent a large-format cell, "
-                    "battery pack, or different unit."
+                    "Capacity units or battery scale require "
+                    "confirmation."
                 )
 
     else:
         detected_units["capacity"] = "Unavailable"
 
-    # --------------------------------------------------------
-    # TIME
-    # --------------------------------------------------------
-
+    # Time
     if "time_s" in dataframe.columns:
-        time_values = dataframe[
+        values = dataframe[
             "time_s"
         ].dropna()
 
-        if time_values.empty:
+        if values.empty:
             detected_units["time"] = "Unknown"
 
         else:
@@ -306,42 +295,37 @@ def detect_suspected_units(dataframe):
             )
 
             warnings.append(
-                "Time is currently assumed to be in seconds. "
-                "Automatic distinction between seconds, minutes, "
-                "and hours is not guaranteed."
+                "Time is assumed to be in seconds. Confirm this "
+                "using the source dataset documentation."
             )
 
     else:
         detected_units["time"] = "Unavailable"
 
-    # --------------------------------------------------------
-    # TEMPERATURE
-    # --------------------------------------------------------
-
+    # Temperature
     if "temperature_c" in dataframe.columns:
-        temperature_values = dataframe[
+        values = dataframe[
             "temperature_c"
         ].dropna()
 
-        if temperature_values.empty:
+        if values.empty:
             detected_units["temperature"] = "Unknown"
 
         else:
-            median_temperature = float(
-                temperature_values.median()
+            median_value = float(
+                values.median()
             )
 
-            if 200 <= median_temperature <= 400:
+            if 200 <= median_value <= 400:
                 detected_units["temperature"] = (
                     "Likely kelvin (K)"
                 )
 
                 warnings.append(
-                    "Temperature appears to be in kelvin. "
-                    "Conversion to degrees Celsius may be required."
+                    "Temperature values may still be in kelvin."
                 )
 
-            elif -50 <= median_temperature <= 150:
+            elif -50 <= median_value <= 150:
                 detected_units["temperature"] = (
                     "Likely degrees Celsius"
                 )
@@ -360,13 +344,13 @@ def detect_suspected_units(dataframe):
 
 
 # ============================================================
-# PROFILE DATA QUALITY
+# DATA QUALITY
 # ============================================================
 
 def profile_data_quality(dataframe):
     """
-    Measure missing data, duplicate rows, numeric validity,
-    and suspicious engineering values.
+    Measure missing values, duplicate rows, and suspicious
+    engineering values.
     """
     row_count = int(
         len(dataframe)
@@ -394,6 +378,7 @@ def profile_data_quality(dataframe):
             / total_cells
             * 100
         )
+
     else:
         missing_percentage = 0.0
 
@@ -413,7 +398,9 @@ def profile_data_quality(dataframe):
     invalid_counts = {}
 
     if "voltage_v" in dataframe.columns:
-        invalid_counts["nonpositive_voltage"] = int(
+        invalid_counts[
+            "nonpositive_voltage"
+        ] = int(
             (
                 dataframe["voltage_v"]
                 <= 0
@@ -421,7 +408,9 @@ def profile_data_quality(dataframe):
         )
 
     if "capacity_ah" in dataframe.columns:
-        invalid_counts["negative_capacity"] = int(
+        invalid_counts[
+            "negative_capacity"
+        ] = int(
             (
                 dataframe["capacity_ah"]
                 < 0
@@ -429,7 +418,9 @@ def profile_data_quality(dataframe):
         )
 
     if "time_s" in dataframe.columns:
-        invalid_counts["negative_time"] = int(
+        invalid_counts[
+            "negative_time"
+        ] = int(
             (
                 dataframe["time_s"]
                 < 0
@@ -469,12 +460,13 @@ def profile_data_quality(dataframe):
 
 
 # ============================================================
-# DETECT DATASET STRUCTURE
+# DATASET STRUCTURE
 # ============================================================
 
 def detect_dataset_structure(dataframe):
     """
-    Detect the dataset structure and battery operation type.
+    Detect the dataset format, cycle count, battery count, and
+    current sign behaviour.
     """
     structure = {
         "dataset_type": "Unknown",
@@ -485,10 +477,7 @@ def detect_dataset_structure(dataframe):
         "current_sign_convention": "Unknown",
     }
 
-    # --------------------------------------------------------
-    # BATTERY COUNT
-    # --------------------------------------------------------
-
+    # Battery scope
     if "battery_id" in dataframe.columns:
         battery_count = int(
             dataframe["battery_id"]
@@ -508,18 +497,12 @@ def detect_dataset_structure(dataframe):
                 "Single battery"
             )
 
-        else:
-            structure["battery_scope"] = "Unknown"
-
     else:
         structure["battery_scope"] = (
             "Battery identifier unavailable"
         )
 
-    # --------------------------------------------------------
-    # CYCLE COUNT
-    # --------------------------------------------------------
-
+    # Cycle count
     if "cycle" in dataframe.columns:
         structure["cycle_count"] = int(
             dataframe["cycle"]
@@ -527,11 +510,7 @@ def detect_dataset_structure(dataframe):
             .nunique()
         )
 
-    # --------------------------------------------------------
-    # DATASET TYPE
-    # --------------------------------------------------------
-
-    has_time_series_columns = all(
+    has_time_series = all(
         column in dataframe.columns
         for column in [
             "time_s",
@@ -548,7 +527,7 @@ def detect_dataset_structure(dataframe):
         "capacity_ah" in dataframe.columns
     )
 
-    if has_time_series_columns and has_cycle:
+    if has_time_series and has_cycle:
         structure["dataset_type"] = (
             "Cycle-based time-series"
         )
@@ -570,7 +549,7 @@ def detect_dataset_structure(dataframe):
                 "Cycle-based measurements"
             )
 
-    elif has_time_series_columns:
+    elif has_time_series:
         structure["dataset_type"] = (
             "Time-series without cycle index"
         )
@@ -580,10 +559,7 @@ def detect_dataset_structure(dataframe):
             "Capacity dataset"
         )
 
-    # --------------------------------------------------------
-    # CURRENT OPERATION TYPE
-    # --------------------------------------------------------
-
+    # Current sign behaviour
     if "current_a" in dataframe.columns:
         current_values = dataframe[
             "current_a"
@@ -647,13 +623,12 @@ def detect_dataset_structure(dataframe):
 
 
 # ============================================================
-# CALCULATE COLUMN STATISTICS
+# NUMERIC STATISTICS
 # ============================================================
 
 def calculate_column_statistics(dataframe):
     """
-    Calculate descriptive statistics for recognized numeric
-    battery columns.
+    Calculate basic statistics for standardized numeric columns.
     """
     statistics = {}
 
@@ -698,163 +673,81 @@ def calculate_column_statistics(dataframe):
 
 
 # ============================================================
-# DETECT AVAILABLE ANALYSES
+# ANALYSIS CAPABILITIES
 # ============================================================
 
 def detect_analysis_capabilities(dataframe):
     """
-    Determine which analyses are possible from the available
-    standardized columns.
+    Determine which analyses can run from the available columns.
     """
     available_columns = set(
         dataframe.columns
     )
 
-    capabilities = {}
-
-    capabilities["soh"] = {
-        "available": (
-            "capacity_ah" in available_columns
-        ),
-        "requirements": [
+    capability_requirements = {
+        "soh": [
             "capacity_ah",
         ],
-    }
-
-    capabilities["degradation"] = {
-        "available": all(
-            column in available_columns
-            for column in [
-                "cycle",
-                "capacity_ah",
-            ]
-        ),
-        "requirements": [
+        "degradation": [
             "cycle",
             "capacity_ah",
         ],
-    }
-
-    capabilities["soc"] = {
-        "available": all(
-            column in available_columns
-            for column in [
-                "time_s",
-                "current_a",
-                "capacity_ah",
-            ]
-        ),
-        "requirements": [
+        "soc": [
             "time_s",
             "current_a",
             "capacity_ah",
         ],
-    }
-
-    capabilities["ica"] = {
-        "available": all(
-            column in available_columns
-            for column in [
-                "cycle",
-                "voltage_v",
-                "capacity_ah",
-            ]
-        ),
-        "requirements": [
+        "ica": [
             "cycle",
             "voltage_v",
             "capacity_ah",
         ],
-    }
-
-    capabilities["dva"] = {
-        "available": all(
-            column in available_columns
-            for column in [
-                "cycle",
-                "voltage_v",
-                "capacity_ah",
-            ]
-        ),
-        "requirements": [
+        "dva": [
             "cycle",
             "voltage_v",
             "capacity_ah",
         ],
-    }
-
-    capabilities["voltage_diagnostics"] = {
-        "available": all(
-            column in available_columns
-            for column in [
-                "cycle",
-                "voltage_v",
-            ]
-        ),
-        "requirements": [
+        "voltage_diagnostics": [
             "cycle",
             "voltage_v",
         ],
-    }
-
-    capabilities["current_diagnostics"] = {
-        "available": all(
-            column in available_columns
-            for column in [
-                "cycle",
-                "current_a",
-            ]
-        ),
-        "requirements": [
+        "current_diagnostics": [
             "cycle",
             "current_a",
         ],
-    }
-
-    capabilities["temperature_diagnostics"] = {
-        "available": (
-            "temperature_c"
-            in available_columns
-        ),
-        "requirements": [
+        "temperature_diagnostics": [
             "temperature_c",
         ],
-    }
-
-    capabilities["capacity_diagnostics"] = {
-        "available": all(
-            column in available_columns
-            for column in [
-                "cycle",
-                "capacity_ah",
-            ]
-        ),
-        "requirements": [
+        "capacity_diagnostics": [
             "cycle",
             "capacity_ah",
         ],
     }
 
-    for analysis_name, capability in (
-        capabilities.items()
+    capabilities = {}
+
+    for analysis_name, requirements in (
+        capability_requirements.items()
     ):
-        missing_requirements = [
+        missing_columns = [
             column
-            for column in capability[
-                "requirements"
-            ]
+            for column in requirements
             if column not in available_columns
         ]
 
-        capability["missing_columns"] = (
-            missing_requirements
-        )
+        capabilities[analysis_name] = {
+            "available": (
+                len(missing_columns) == 0
+            ),
+            "requirements": requirements,
+            "missing_columns": missing_columns,
+        }
 
     return capabilities
 
 
 # ============================================================
-# CALCULATE RELIABILITY LEVEL
+# DATA READINESS
 # ============================================================
 
 def calculate_reliability(
@@ -863,9 +756,9 @@ def calculate_reliability(
     unit_warnings,
 ):
     """
-    Calculate a simple data-readiness level.
+    Calculate a data-readiness score.
 
-    This is not ML accuracy or prediction confidence.
+    The result is not an ML accuracy score.
     """
     score = 100
     reasons = []
@@ -943,17 +836,17 @@ def calculate_reliability(
             "One or more measurement units require confirmation."
         )
 
-    available_analysis_count = sum(
+    available_count = sum(
         1
         for capability in capabilities.values()
         if capability["available"]
     )
 
-    if available_analysis_count == 0:
+    if available_count == 0:
         score -= 30
 
         reasons.append(
-            "No supported analysis is currently available."
+            "No supported analysis is available."
         )
 
     score = max(
@@ -986,12 +879,13 @@ def calculate_reliability(
 
 
 # ============================================================
-# BUILD COMPLETE DATASET PROFILE
+# BUILD PROFILE
 # ============================================================
 
 def build_dataset_profile(dataframe):
     """
-    Build a complete dataset profile from standardized data.
+    Build the complete profile from standardized and normalized
+    data.
     """
     numeric_data = convert_numeric_columns(
         dataframe
@@ -1039,6 +933,69 @@ def build_dataset_profile(dataframe):
 
 
 # ============================================================
+# PRINT NORMALIZATION SUMMARY
+# ============================================================
+
+def print_integrated_normalization_summary(
+    original_dataset_path,
+    normalized_dataset_path,
+    normalization_summary,
+    normalization_warnings,
+):
+    """
+    Print a concise normalization summary before profiling.
+    """
+    print("\n" + "=" * 75)
+    print("UNIT NORMALIZATION")
+    print("=" * 75)
+
+    print(
+        f"\nOriginal dataset:\n"
+        f"{original_dataset_path}"
+    )
+
+    print(
+        f"\nNormalized dataset:\n"
+        f"{normalized_dataset_path}"
+    )
+
+    print(
+        "\nAlready normalized: "
+        f"{normalization_summary.get('already_normalized', False)}"
+    )
+
+    print(
+        "Columns converted: "
+        f"{normalization_summary.get('columns_converted', 0)}"
+    )
+
+    print(
+        "Columns standardized: "
+        f"{normalization_summary.get('columns_standardized', 0)}"
+    )
+
+    print(
+        "Columns unchanged: "
+        f"{normalization_summary.get('columns_unchanged', 0)}"
+    )
+
+    if normalization_warnings:
+        print("\nNORMALIZATION WARNINGS")
+
+        for warning in normalization_warnings:
+            print(
+                f"  - {warning}"
+            )
+
+    else:
+        print(
+            "\nNo unit-normalization warning was generated."
+        )
+
+    print("=" * 75)
+
+
+# ============================================================
 # PRINT DATASET PROFILE
 # ============================================================
 
@@ -1050,18 +1007,19 @@ def print_dataset_profile(
     profile,
 ):
     """
-    Print a readable dataset profile.
+    Print the complete normalized dataset profile.
     """
     print("\n" + "=" * 75)
     print("BATTERY DATASET PROFILE")
     print("=" * 75)
 
     print(
-        f"\nDataset: {dataset_path}"
+        f"\nDataset used for profiling:\n"
+        f"{dataset_path}"
     )
 
     print(
-        f"Rows: "
+        f"\nRows: "
         f"{profile['quality']['rows']:,}"
     )
 
@@ -1070,7 +1028,7 @@ def print_dataset_profile(
         f"{profile['quality']['columns']}"
     )
 
-    print("\nORIGINAL COLUMNS")
+    print("\nCOLUMNS BEFORE STANDARD MAPPING")
 
     for column in original_columns:
         print(
@@ -1090,7 +1048,7 @@ def print_dataset_profile(
 
     else:
         print(
-            "  No columns were mapped."
+            "  No additional column mapping was required."
         )
 
     if unknown_columns:
@@ -1135,7 +1093,7 @@ def print_dataset_profile(
         f"{structure['current_sign_convention']}"
     )
 
-    print("\nSUSPECTED UNITS")
+    print("\nSUSPECTED UNITS AFTER NORMALIZATION")
 
     for measurement, unit in (
         profile["detected_units"].items()
@@ -1211,8 +1169,7 @@ def print_dataset_profile(
     ):
         if capability["available"]:
             print(
-                f"  {analysis_name.upper()}: "
-                "Available"
+                f"  {analysis_name.upper()}: Available"
             )
 
         else:
@@ -1252,9 +1209,13 @@ def print_dataset_profile(
     print("\nIMPORTANT")
 
     print(
-        "  Detected units are heuristic estimates. "
-        "Unit conversion must not occur automatically until "
-        "the unit is verified or confidence is high."
+        "  Unit conversions are applied only when the source "
+        "unit is explicit in the column name."
+    )
+
+    print(
+        "  Values inferred only from ranges are reported as "
+        "warnings and are not silently converted."
     )
 
     print(
@@ -1266,15 +1227,17 @@ def print_dataset_profile(
 
 
 # ============================================================
-# DETERMINE DIAGNOSTICS OUTPUT ROOT
+# OUTPUT ROOT
 # ============================================================
 
-def get_diagnostics_output_root(dataset_path):
+def get_diagnostics_output_root(
+    normalized_dataset_path,
+):
     """
-    Return the correct output folder for the selected dataset.
+    Return the main dataset output directory.
     """
     resolved_path = Path(
-        dataset_path
+        normalized_dataset_path
     ).expanduser().resolve()
 
     if (
@@ -1293,24 +1256,24 @@ def get_diagnostics_output_root(dataset_path):
 
 
 # ============================================================
-# AUTOMATIC DIAGNOSTICS PIPELINE
+# AUTOMATIC DIAGNOSTICS
 # ============================================================
 
 def run_automatic_diagnostics(
-    dataset_path,
+    normalized_dataset_path,
     standardized_data,
 ):
     """
-    Run the four diagnostic modules automatically.
+    Run voltage, current, temperature, and capacity diagnostics.
 
-    If one diagnostic fails, the remaining diagnostics continue.
+    One failed diagnostic does not stop the remaining modules.
     """
     print("\n" + "=" * 75)
     print("AUTOMATIC BATTERY DIAGNOSTICS")
     print("=" * 75)
 
     output_root = get_diagnostics_output_root(
-        dataset_path
+        normalized_dataset_path
     )
 
     output_root.mkdir(
@@ -1324,32 +1287,29 @@ def run_automatic_diagnostics(
 
     diagnostic_results = {}
 
-    # ========================================================
-    # VOLTAGE DIAGNOSTICS
-    # ========================================================
-
-    voltage_requirements = {
+    # Voltage diagnostics
+    required_columns = {
         "cycle",
         "voltage_v",
     }
 
-    voltage_missing = sorted(
-        voltage_requirements
+    missing_columns = sorted(
+        required_columns
         - available_columns
     )
 
-    if voltage_missing:
+    if missing_columns:
         diagnostic_results["voltage"] = {
             "status": "Skipped",
             "details": (
                 "Missing columns: "
-                + ", ".join(voltage_missing)
+                + ", ".join(missing_columns)
             ),
         }
 
         print(
             "\n[VOLTAGE] Skipped. Missing columns: "
-            + ", ".join(voltage_missing)
+            + ", ".join(missing_columns)
         )
 
     else:
@@ -1380,14 +1340,12 @@ def run_automatic_diagnostics(
                 / "voltage_diagnostics"
             )
 
-            voltage_saved_files = (
-                save_voltage_results(
-                    discharge_data,
-                    voltage_cycle_summary,
-                    voltage_summary,
-                    voltage_warnings,
-                    voltage_output_folder,
-                )
+            saved_files = save_voltage_results(
+                discharge_data,
+                voltage_cycle_summary,
+                voltage_summary,
+                voltage_warnings,
+                voltage_output_folder,
             )
 
             diagnostic_results["voltage"] = {
@@ -1395,7 +1353,7 @@ def run_automatic_diagnostics(
                 "output_folder": str(
                     voltage_output_folder
                 ),
-                "files": voltage_saved_files,
+                "files": saved_files,
             }
 
             print(
@@ -1417,32 +1375,29 @@ def run_automatic_diagnostics(
                 f"[VOLTAGE] Failed: {error}"
             )
 
-    # ========================================================
-    # CURRENT DIAGNOSTICS
-    # ========================================================
-
-    current_requirements = {
+    # Current diagnostics
+    required_columns = {
         "cycle",
         "current_a",
     }
 
-    current_missing = sorted(
-        current_requirements
+    missing_columns = sorted(
+        required_columns
         - available_columns
     )
 
-    if current_missing:
+    if missing_columns:
         diagnostic_results["current"] = {
             "status": "Skipped",
             "details": (
                 "Missing columns: "
-                + ", ".join(current_missing)
+                + ", ".join(missing_columns)
             ),
         }
 
         print(
             "\n[CURRENT] Skipped. Missing columns: "
-            + ", ".join(current_missing)
+            + ", ".join(missing_columns)
         )
 
     else:
@@ -1473,14 +1428,12 @@ def run_automatic_diagnostics(
                 / "current_diagnostics"
             )
 
-            current_saved_files = (
-                save_current_results(
-                    validated_current_data,
-                    current_cycle_summary,
-                    current_summary,
-                    current_warnings,
-                    current_output_folder,
-                )
+            saved_files = save_current_results(
+                validated_current_data,
+                current_cycle_summary,
+                current_summary,
+                current_warnings,
+                current_output_folder,
             )
 
             diagnostic_results["current"] = {
@@ -1488,7 +1441,7 @@ def run_automatic_diagnostics(
                 "output_folder": str(
                     current_output_folder
                 ),
-                "files": current_saved_files,
+                "files": saved_files,
             }
 
             print(
@@ -1510,33 +1463,28 @@ def run_automatic_diagnostics(
                 f"[CURRENT] Failed: {error}"
             )
 
-    # ========================================================
-    # TEMPERATURE DIAGNOSTICS
-    # ========================================================
-
-    temperature_requirements = {
+    # Temperature diagnostics
+    required_columns = {
         "temperature_c",
     }
 
-    temperature_missing = sorted(
-        temperature_requirements
+    missing_columns = sorted(
+        required_columns
         - available_columns
     )
 
-    if temperature_missing:
+    if missing_columns:
         diagnostic_results["temperature"] = {
             "status": "Skipped",
             "details": (
                 "Missing columns: "
-                + ", ".join(
-                    temperature_missing
-                )
+                + ", ".join(missing_columns)
             ),
         }
 
         print(
             "\n[TEMPERATURE] Skipped. Missing columns: "
-            + ", ".join(temperature_missing)
+            + ", ".join(missing_columns)
         )
 
     else:
@@ -1547,7 +1495,7 @@ def run_automatic_diagnostics(
 
             temperature_results = (
                 run_temperature_diagnostics(
-                    dataset_path
+                    normalized_dataset_path
                 )
             )
 
@@ -1582,32 +1530,29 @@ def run_automatic_diagnostics(
                 f"[TEMPERATURE] Failed: {error}"
             )
 
-    # ========================================================
-    # CAPACITY DIAGNOSTICS
-    # ========================================================
-
-    capacity_requirements = {
+    # Capacity diagnostics
+    required_columns = {
         "cycle",
         "capacity_ah",
     }
 
-    capacity_missing = sorted(
-        capacity_requirements
+    missing_columns = sorted(
+        required_columns
         - available_columns
     )
 
-    if capacity_missing:
+    if missing_columns:
         diagnostic_results["capacity"] = {
             "status": "Skipped",
             "details": (
                 "Missing columns: "
-                + ", ".join(capacity_missing)
+                + ", ".join(missing_columns)
             ),
         }
 
         print(
             "\n[CAPACITY] Skipped. Missing columns: "
-            + ", ".join(capacity_missing)
+            + ", ".join(missing_columns)
         )
 
     else:
@@ -1618,7 +1563,7 @@ def run_automatic_diagnostics(
 
             capacity_results = (
                 run_capacity_diagnostics(
-                    dataset_path
+                    normalized_dataset_path
                 )
             )
 
@@ -1652,10 +1597,6 @@ def run_automatic_diagnostics(
             print(
                 f"[CAPACITY] Failed: {error}"
             )
-
-    # ========================================================
-    # FINAL EXECUTION SUMMARY
-    # ========================================================
 
     completed_count = sum(
         result["status"] == "Completed"
@@ -1713,71 +1654,246 @@ def run_automatic_diagnostics(
 
 
 # ============================================================
+# COMPLETE PIPELINE
+# ============================================================
+
+def run_complete_pipeline(dataset_path):
+    """
+    Run the complete safe battery dataset workflow.
+
+    Flow for a raw dataset:
+        Load raw data
+        Normalize explicit units
+        Save normalized CSV
+        Map standardized columns
+        Profile normalized data
+        Run supported diagnostics
+
+    Flow for an already-normalized dataset:
+        Load normalized data
+        Detect the normalization marker
+        Reuse the same normalized CSV
+        Do not create a duplicate output folder
+        Profile the data
+        Run supported diagnostics
+    """
+    original_dataset_path = Path(
+        dataset_path
+    ).expanduser().resolve()
+
+    original_data = load_battery_dataset(
+        original_dataset_path
+    )
+
+    (
+        normalized_data,
+        conversion_audit,
+        normalization_warnings,
+        normalization_summary,
+    ) = normalize_dataset_units(
+        original_data
+    )
+
+    range_warnings = validate_normalized_ranges(
+        normalized_data
+    )
+
+    all_normalization_warnings = (
+        normalization_warnings
+        + range_warnings
+    )
+
+    normalization_summary[
+        "warning_count"
+    ] = len(
+        all_normalization_warnings
+    )
+
+    already_normalized = bool(
+        normalization_summary.get(
+            "already_normalized",
+            False,
+        )
+    )
+
+    # --------------------------------------------------------
+    # REUSE AN ALREADY-NORMALIZED DATASET
+    # --------------------------------------------------------
+
+    if already_normalized:
+        normalized_dataset_path = (
+            original_dataset_path
+        )
+
+        existing_output_directory = (
+            normalized_dataset_path.parent
+        )
+
+        saved_normalization_files = {
+            "normalized_data": (
+                normalized_dataset_path
+            ),
+            "conversion_audit": (
+                existing_output_directory
+                / "unit_conversion_audit.csv"
+            ),
+            "warnings": (
+                existing_output_directory
+                / "unit_normalization_warnings.csv"
+            ),
+            "summary": (
+                existing_output_directory
+                / "unit_normalization_summary.csv"
+            ),
+        }
+
+        print(
+            "\nExisting unit-normalization marker detected."
+        )
+
+        print(
+            "The existing normalized dataset will be reused."
+        )
+
+        print(
+            "No duplicate normalized dataset folder "
+            "will be created."
+        )
+
+    # --------------------------------------------------------
+    # SAVE A NEWLY-NORMALIZED RAW DATASET
+    # --------------------------------------------------------
+
+    else:
+        saved_normalization_files = (
+            save_normalized_results(
+                normalized_data,
+                conversion_audit,
+                all_normalization_warnings,
+                normalization_summary,
+                original_dataset_path,
+            )
+        )
+
+        normalized_dataset_path = Path(
+            saved_normalization_files[
+                "normalized_data"
+            ]
+        ).resolve()
+
+    # --------------------------------------------------------
+    # LOAD DATA USED BY THE PROFILER AND DIAGNOSTICS
+    # --------------------------------------------------------
+
+    normalized_data_for_mapping = (
+        load_battery_dataset(
+            normalized_dataset_path
+        )
+    )
+
+    columns_before_mapping = list(
+        normalized_data_for_mapping.columns
+    )
+
+    mapping, unknown_columns = (
+        detect_column_mapping(
+            normalized_data_for_mapping
+        )
+    )
+
+    standardized_data = apply_column_mapping(
+        normalized_data_for_mapping,
+        mapping,
+    )
+
+    dataset_profile, profiled_data = (
+        build_dataset_profile(
+            standardized_data
+        )
+    )
+
+    print_integrated_normalization_summary(
+        original_dataset_path,
+        normalized_dataset_path,
+        normalization_summary,
+        all_normalization_warnings,
+    )
+
+    print_dataset_profile(
+        normalized_dataset_path,
+        columns_before_mapping,
+        mapping,
+        unknown_columns,
+        dataset_profile,
+    )
+
+    diagnostic_results = (
+        run_automatic_diagnostics(
+            normalized_dataset_path,
+            profiled_data,
+        )
+    )
+
+    return {
+        "original_dataset_path": (
+            original_dataset_path
+        ),
+        "normalized_dataset_path": (
+            normalized_dataset_path
+        ),
+        "normalization_files": (
+            saved_normalization_files
+        ),
+        "dataset_profile": dataset_profile,
+        "diagnostic_results": diagnostic_results,
+    }
+
+# ============================================================
 # MAIN PROGRAM
 # ============================================================
 
 if __name__ == "__main__":
     dataset_path = input(
-        "Paste the full path of a battery dataset: "
+        "Paste the full path of a raw or normalized "
+        "battery dataset: "
     ).strip().strip('"').strip("'")
 
     if not dataset_path:
         print(
-            "\nDataset profiling failed: "
+            "\nBattery pipeline failed: "
             "No dataset path was supplied."
         )
 
         sys.exit(1)
 
     try:
-        # Load the original battery dataset.
-        battery_data = load_battery_dataset(
+        pipeline_results = run_complete_pipeline(
             dataset_path
         )
 
-        original_columns = list(
-            battery_data.columns
+        print("\n" + "=" * 75)
+        print("COMPLETE PIPELINE FINISHED")
+        print("=" * 75)
+
+        print(
+            "\nNormalized dataset used by diagnostics:"
         )
 
-        # Detect and apply standardized column names.
-        mapping, unknown_columns = (
-            detect_column_mapping(
-                battery_data
-            )
+        print(
+            pipeline_results[
+                "normalized_dataset_path"
+            ]
         )
 
-        standardized_data = apply_column_mapping(
-            battery_data,
-            mapping,
+        print(
+            "\nThe original raw dataset was not modified."
         )
 
-        # Build the complete dataset profile.
-        dataset_profile, profiled_data = (
-            build_dataset_profile(
-                standardized_data
-            )
-        )
-
-        # Print the profile.
-        print_dataset_profile(
-            dataset_path,
-            original_columns,
-            mapping,
-            unknown_columns,
-            dataset_profile,
-        )
-
-        # Automatically run the four diagnostic modules.
-        diagnostic_results = (
-            run_automatic_diagnostics(
-                dataset_path,
-                profiled_data,
-            )
-        )
+        print("=" * 75)
 
     except Exception as error:
         print(
-            f"\nDataset profiling failed: {error}"
+            f"\nBattery pipeline failed: {error}"
         )
 
         sys.exit(1)
