@@ -38,6 +38,7 @@ from file_reader import load_battery_dataset
 from column_mapper import (
     apply_column_mapping,
     detect_column_mapping,
+    detect_column_mapping_with_fallback,
 )
 
 from unit_normalizer import (
@@ -1796,11 +1797,12 @@ def run_complete_pipeline(dataset_path):
     )
 
     mapping, unknown_columns = (
-        detect_column_mapping(
-            normalized_data_for_mapping
+           detect_column_mapping_with_fallback(
+        normalized_data_for_mapping,
+        interactive=True,
+        save_choices=True,
         )
     )
-
     standardized_data = apply_column_mapping(
         normalized_data_for_mapping,
         mapping,
