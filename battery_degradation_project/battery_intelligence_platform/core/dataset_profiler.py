@@ -282,13 +282,27 @@ def detect_suspected_units(dataframe):
         detected_units["capacity"] = "Unavailable"
 
     # Time
+        # Time
     if "time_s" in dataframe.columns:
         values = dataframe[
             "time_s"
         ].dropna()
 
+        normalization_marker = (
+            "_unit_normalization_version"
+            in dataframe.columns
+            and dataframe[
+                "_unit_normalization_version"
+            ].notna().any()
+        )
+
         if values.empty:
             detected_units["time"] = "Unknown"
+
+        elif normalization_marker:
+            detected_units["time"] = (
+                "Confirmed seconds (s)"
+            )
 
         else:
             detected_units["time"] = (
@@ -302,7 +316,7 @@ def detect_suspected_units(dataframe):
 
     else:
         detected_units["time"] = "Unavailable"
-
+        
     # Temperature
     if "temperature_c" in dataframe.columns:
         values = dataframe[

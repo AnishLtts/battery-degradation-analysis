@@ -340,115 +340,105 @@ def calculate_capacity_soh(
 # BATTERY SUMMARY
 # ============================================================
 
-def create_battery_summary(soh_data):
+def calculate_capacity_soh(
+    dataframe,
+    rated_capacity_ah=None,
+    initial_records=3,
+):
     """
-    Create one summary row for each battery.
+    Calculate capacity-based battery SOH once per cycle.
+
+    SOH (%) =
+        cycle capacity / reference capacity * 100
+
+    For time-series cycling data, the maximum valid capacity
+    recorded in each cycle is treated as that cycle's measured
+    capacity.
     """
 
-    if "battery_id" not in soh_data.columns:
-        latest_record = soh_data.iloc[-1]
-
-        summary = pd.DataFrame(
-            {
-                "battery_id": ["dataset"],
-                "reference_capacity_ah": [
-                    soh_data[
-                        "reference_capacity_ah"
-                    ].iloc[0]
-                ],
-                "latest_capacity_ah": [
-                    latest_record["capacity_ah"]
-                ],
-                "latest_soh_percent": [
-                    latest_record["soh_percent"]
-                ],
-                "minimum_soh_percent": [
-                    soh_data["soh_percent"].min()
-                ],
-                "capacity_loss_percent": [
-                    latest_record[
-                        "capacity_loss_percent"
-                    ]
-                ],
-                "health_category": [
-                    latest_record[
-                        "health_category"
-                    ]
-                ],
-                "records_analyzed": [
-                    len(soh_data)
-                ],
-            }
-        )
-
-    else:
-        summary_rows = []
-
-        for battery_id, battery_data in (
-            soh_data.groupby(
-                "battery_id",
-                sort=False,
-            )
-        ):
-            battery_data = battery_data.sort_values(
-                "battery_record_number"
-            )
-
-            latest_record = battery_data.iloc[-1]
-
-            summary_rows.append(
-                {
-                    "battery_id": battery_id,
-                    "reference_capacity_ah": (
-                        battery_data[
-                            "reference_capacity_ah"
-                        ].iloc[0]
-                    ),
-                    "latest_capacity_ah": (
-                        latest_record[
-                            "capacity_ah"
-                        ]
-                    ),
-                    "latest_soh_percent": (
-                        latest_record[
-                            "soh_percent"
-                        ]
-                    ),
-                    "minimum_soh_percent": (
-                        battery_data[
-                            "soh_percent"
-                        ].min()
-                    ),
-                    "capacity_loss_percent": (
-                        latest_record[
-                            "capacity_loss_percent"
-                        ]
-                    ),
-                    "health_category": (
-                        latest_record[
-                            "health_category"
-                        ]
-                    ),
-                    "records_analyzed": len(
-                        battery_data
-                    ),
-                }
-            )
-
-        summary = pd.DataFrame(
-            summary_rows
-        )
-
-    numeric_columns = summary.select_dtypes(
-        include="number"
-    ).columns
-
-    summary[numeric_columns] = (
-        summary[numeric_columns].round(3)
+    valid_data = remove_invalid_capacity_rows(
+        dataframe
     )
 
-    return summary
+    valid_data = sort_battery_records(
+        valid_data
+    )
 
+    valid_data = add_battery_cycle_number(
+        valid_data
+    )
+
+    # Locate the cycle identifier produced or retained by
+    # the preprocessing functions.
+    cycle_column = None
+
+    for candidate_column in (
+        "cycle",
+        "cycle_number",
+        "battery_cycle_number",
+    ):
+        if candidate_column in valid_data.columns:
+            cycle_column = candidate_column
+            break
+
+    if cycle_column is None:
+        raise ValueError(
+            "SOH calculation requires a cycle column. "
+            "No cycle, cycle_number, or battery_cycle_number "
+            "column was found."
+        )
+
+    # Keep different batteries separate when a battery identifier
+    # is available. Otherwise, treat the input as one battery.
+    if "battery_id" not in valid_data.columns:
+        valid_data = valid_data.copy()
+        valid_data["battery_id"] = "dataset"
+
+    # Extract one representative capacity value per battery cycle.
+    # Maximum capacity is appropriate for cumulative charge or
+    # discharge capacity curves that begin near zero each cycle.
+    cycle_capacity_data = (
+        valid_data.groupby(
+            ["battery_id", cycle_column],
+            as_index=False,
+            dropna=False,
+        )
+        .agg(
+            capacity_ah=(
+                "capacity_ah",
+                "max",
+            )
+        )
+    )
+
+    cycle_capacity_data = (
+        cycle_capacity_data.sort_values(
+            ["battery_id", cycle_column]
+        ).reset_index(drop=True)
+    )
+
+    soh_data = calculate_reference_capacity(
+        cycle_capacity_data,
+        rated_capacity_ah=rated_capacity_ah,
+        initial_records=initial_records,
+    )
+
+    soh_data["soh_percent"] = (
+        soh_data["capacity_ah"]
+        / soh_data["reference_capacity_ah"]
+        * 100
+    )
+
+    soh_data["capacity_loss_percent"] = (
+        100 - soh_data["soh_percent"]
+    )
+
+    soh_data["health_category"] = (
+        soh_data["soh_percent"]
+        .apply(assign_health_category)
+    )
+
+    return soh_data
 
 # ============================================================
 # CLEAN BATTERY SOH SUMMARY GRAPH

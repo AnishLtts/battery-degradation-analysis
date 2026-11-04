@@ -927,39 +927,44 @@ def detect_column_mapping_with_fallback(
     Run automatic detection and optionally launch interactive
     mapping for unrecognized columns.
 
+    Internal platform metadata columns are ignored automatically.
+
     Use this function in command-line pipelines that support user
     input. For automated tests and web applications, use
     interactive=False.
     """
-    saved_mappings = (
-        load_saved_mappings(
-            mapping_file
-        )
+
+    saved_mappings = load_saved_mappings(
+        mapping_file
     )
 
-    mapping, unknown_columns = (
-        detect_column_mapping(
+    mapping, unknown_columns = detect_column_mapping(
+        dataframe,
+        saved_mappings,
+    )
+
+    # Internal columns created by the battery intelligence platform.
+    # These columns are metadata and must not be mapped interactively.
+    internal_metadata_columns = {
+        "_unit_normalization_version",
+    }
+
+    unknown_columns = [
+        column
+        for column in unknown_columns
+        if column not in internal_metadata_columns
+    ]
+
+    if interactive and unknown_columns:
+        mapping, unknown_columns = collect_interactive_mapping(
             dataframe,
-            saved_mappings,
-        )
-    )
-
-    if (
-        interactive
-        and unknown_columns
-    ):
-        mapping, unknown_columns = (
-            collect_interactive_mapping(
-                dataframe,
-                mapping,
-                unknown_columns,
-                save_choices=save_choices,
-                mapping_file=mapping_file,
-            )
+            mapping,
+            unknown_columns,
+            save_choices=save_choices,
+            mapping_file=mapping_file,
         )
 
     return mapping, unknown_columns
-
 
 # ============================================================
 # APPLY COLUMN MAPPING

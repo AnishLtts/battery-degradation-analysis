@@ -343,11 +343,23 @@ def print_capability_report(report):
 
 
 if __name__ == "__main__":
+
+    from execution_engine import (
+    execute_analysis_plan,
+    )
     from file_reader import load_battery_dataset
 
     from column_mapper import (
         apply_column_mapping,
         detect_column_mapping,
+    )
+
+    from unit_normalizer import (
+        normalize_dataset_units,
+    )
+
+    from analysis_router import (
+        print_execution_plan,
     )
 
     dataset_path = input(
@@ -368,19 +380,46 @@ if __name__ == "__main__":
             mapping,
         )
 
-        capability_report = evaluate_dataset_capabilities(
+        (
+            normalized_data,
+            conversion_audit,
+            normalization_warnings,
+            normalization_summary,
+        ) = normalize_dataset_units(
             standardized_data
         )
+
+       
+        capability_report = evaluate_dataset_capabilities(
+             normalized_data
+        )
+        
 
         print_capability_report(
             capability_report
         )
 
+        print_execution_plan(
+             capability_report
+        )
+        
+        execute_analysis_plan(
+           capability_report
+        )
+        print("\nFINAL DATASET COLUMNS")
+
+        for column in normalized_data.columns:
+            print(f"  - {column}")
+
         if unknown_columns:
-            print("\nUNRECOGNIZED ORIGINAL COLUMNS")
+            print(
+                "\nUNRECOGNIZED ORIGINAL COLUMNS"
+            )
 
             for column in unknown_columns:
                 print(f"  - {column}")
 
     except Exception as error:
-        print(f"\nCapability analysis failed: {error}")
+        print(
+            f"\nCapability analysis failed: {error}"
+        )
