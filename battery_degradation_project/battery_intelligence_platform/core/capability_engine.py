@@ -402,9 +402,10 @@ if __name__ == "__main__":
         print_execution_plan(
              capability_report
         )
-        
+
         execute_analysis_plan(
-           capability_report
+           capability_report,
+           normalized_data,
         )
         print("\nFINAL DATASET COLUMNS")
 

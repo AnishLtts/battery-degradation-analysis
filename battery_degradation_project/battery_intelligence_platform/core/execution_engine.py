@@ -13,6 +13,7 @@ from analysis_runner import (
 
 def execute_analysis_plan(
     capability_report,
+    normalized_data,
 ):
     """
     Decide which analyses should run.
@@ -24,13 +25,68 @@ def execute_analysis_plan(
 
     if should_run_soh(
       capability_report
-):
-      run_soh_analysis()
+    ):
+      soh_results = run_soh_analysis(
+        normalized_data,
+    )
+      print("\n" + "=" * 60)
+      print("BATTERY INTELLIGENCE SUMMARY")
+      print("=" * 60)
+
+      print(
+      f"Cycles Analyzed: {len(soh_results)}"
+      )
+      latest_soh = (
+        soh_results["soh_percent"].iloc[-1]
+      )
+
+      print(
+          f"Latest SOH: {latest_soh:.2f}%"
+      )
+
+    latest_health = (
+    soh_results["health_category"].iloc[-1]
+    )
+
+    print(
+    f"Health Category: {latest_health}"
+    )
+
+    capacity_loss = (
+    100 - latest_soh
+    )
+
+    print(
+    f"Capacity Loss: {capacity_loss:.2f}%"
+    )
+    initial_capacity = (
+    soh_results["usable_capacity_ah"].iloc[0]
+    )
+
+    print(
+     f"Initial Capacity: {initial_capacity:.3f} Ah"
+)
+
+
+    if latest_soh >= 90:
+     recommendation = "Battery is in excellent condition."
+    elif latest_soh >= 80:
+     recommendation = "Battery is healthy and suitable for continued use."
+    elif latest_soh >= 70:
+     recommendation = "Battery is degraded and should be monitored."
+    else:
+     recommendation = "Battery is approaching end-of-life and replacement should be evaluated."
+
+    print(
+     f"Recommendation: {recommendation}"
+)
 
     if should_run_degradation(
         capability_report
     ):
-        run_degradation_analysis()
+        run_degradation_analysis(
+            normalized_data,
+        )
 
     if should_run_ica(
         capability_report
