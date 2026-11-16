@@ -1,4 +1,5 @@
 from pathlib import Path
+from datetime import datetime
 from analysis_router import(
     should_run_soh,
     should_run_degradation,
@@ -24,6 +25,20 @@ def execute_analysis_plan(
     print("\n" + "=" * 60)
     print("EXECUTION ENGINE")
     print("=" * 60)
+    soh_results = None
+    #print(capability_report)
+
+    health_score = "N/A"
+    battery_grade = "N/A"
+    lifecycle_status = "N/A"
+    latest_soh = 0
+    capacity_loss = 0
+    initial_capacity = 0
+    final_capacity = 0
+    capacity_fade = 0
+    recommendation = (
+    "SOH analysis unavailable for this dataset."
+)
 
     if should_run_soh(
         capability_report
@@ -35,6 +50,7 @@ def execute_analysis_plan(
        print("\n" + "=" * 60)
        print("BATTERY INTELLIGENCE SUMMARY")
        print("=" * 60)
+       
 
        print(
         f"Cycles Analyzed: {len(soh_results)}"
@@ -69,57 +85,106 @@ def execute_analysis_plan(
          lifecycle_status = "Near End of Life"
        else:
          lifecycle_status = "End of Life"
-       print(
-    f"Battery Health Score: {health_score}/100"
-    )
-    print(
-    f"Battery Grade: {battery_grade}"
-    )
-    print(
-    f"Lifecycle Status: {lifecycle_status}"
-    )
+         print(
+        f"Battery Health Score: {health_score}/100"
+        )
+         print(
+        f"Battery Grade: {battery_grade}"
+        )
+         print(
+        f"Lifecycle Status: {lifecycle_status}"
+        )
+        
+    if soh_results is not None:
 
-    latest_health = (
+     latest_health = (
         soh_results["health_category"].iloc[-1]
-       )
+     )
 
-    print(
+     print(
         f"Health Category: {latest_health}"
-       )
+     )
 
-    capacity_loss = (
+     capacity_loss = (
         100 - latest_soh
        )
 
-    print(
+     print(
         f"Capacity Loss: {capacity_loss:.2f}%"
        )
+    if soh_results is not None:
+         initial_capacity = (
+            soh_results["capacity_ah"].iloc[0]
+        )
 
-    initial_capacity = (
-        soh_results["capacity_ah"].iloc[0]
-       )
+         print(
+            f"Initial Capacity: {initial_capacity:.3f} Ah"
+        )
 
-    print(
-        f"Initial Capacity: {initial_capacity:.3f} Ah"
-       )
+         final_capacity = (
+            soh_results["capacity_ah"].iloc[-1]
+        )
 
-    final_capacity = (
-        soh_results["capacity_ah"].iloc[-1]
-       )
+         print(
+            f"Final Capacity: {final_capacity:.3f} Ah"
+        )
 
-    print(
-        f"Final Capacity: {final_capacity:.3f} Ah"
-       )
+         capacity_fade = (
+         initial_capacity - final_capacity
+        )
 
-    capacity_fade = (
-        initial_capacity - final_capacity
-      )
-
-    print(
+         print(
         f"Capacity Fade: {capacity_fade:.3f} Ah"
-      )
-    report_text = f"""
+         )
+    run_timestamp = datetime.now().strftime(
+    "%Y-%m-%d %H:%M:%S"
+)
+    available_analysis_text = ""
+
+    for analysis in capability_report[
+    "available_analyses"
+    ]:
+     available_analysis_text += (
+        f"[AVAILABLE] {analysis}\n"
+     )
+    unavailable_analysis_text = ""
+
+    for analysis, details in capability_report[
+    "unavailable_analyses"
+    ].items():
+
+     unavailable_analysis_text += (
+        f"[UNAVAILABLE] {analysis}\n"
+    )
+
+     missing_items = []
+
+     if details["missing_required"]:
+        missing_items.extend(
+            details["missing_required"]
+        )
+
+     if missing_items:
+        unavailable_analysis_text += (
+            f"   Reason: Missing "
+            f"{', '.join(missing_items)}\n\n"
+        )
     
+    report_text = f"""
+
+    DATASET INFORMATION
+
+    Rows: {len(normalized_data):,}
+
+   Cycles: {normalized_data['cycle'].nunique() if 'cycle' in normalized_data.columns else 'N/A'}
+
+   ANALYSES COMPLETED
+
+   {available_analysis_text}
+
+   ANALYSES NOT AVAILABLE
+   {unavailable_analysis_text}
+   
     BATTERY INTELLIGENCE REPORT
 
     Battery Health Score: {health_score}/100
@@ -135,18 +200,18 @@ def execute_analysis_plan(
     SOH Graph:
     outputs/graphs/soh_vs_cycle.png
 
-Capacity Graph:
-outputs/graphs/capacity_vs_cycle.png
+    Capacity Graph:
+    outputs/graphs/capacity_vs_cycle.png
 
-ICA Analysis: Completed
-ICA Cycles Analyzed: 168
-ICA Graph:
-outputs/ica_analysis/ica_analysis.png
+    ICA Analysis: Completed
+    ICA Cycles Analyzed: 168
+    ICA Graph:
+    outputs/ica_analysis/ica_analysis.png
 
-DVA Analysis: Completed
-DVA Cycles Analyzed: 168
-DVA Graph:
-outputs/dva_analysis/dva_analysis.png
+    DVA Analysis: Completed
+    DVA Cycles Analyzed: 168
+    DVA Graph:
+    outputs/dva_analysis/dva_analysis.png
     """
     reports_folder = Path(
     "battery_degradation_project/battery_intelligence_platform/outputs/reports"
