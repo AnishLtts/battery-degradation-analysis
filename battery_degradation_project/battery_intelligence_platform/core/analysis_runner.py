@@ -18,7 +18,10 @@ from analytics.ica_dva.ica_analyzer import (
     analyze_ica,
     save_ica_results,
 )
-
+from analytics.ica_dva.dva_analyzer import (
+    analyze_dva,
+    save_dva_results,
+)
 
 from analytics.soh_engine import (
     calculate_capacity_soh,
@@ -156,7 +159,36 @@ def run_ica_analysis(
     )
 
 
-def run_dva_analysis():
+def run_dva_analysis(
+    dataframe,
+):
     print(
-        "✅ Differential Voltage Analysis executed"
+        "🚀 Starting Differential Voltage Analysis"
+    )
+
+    (
+        dva_results,
+        dva_cycle_summary,
+        dva_summary,
+        discharge_info,
+    ) = analyze_dva(
+        dataframe
+    )
+
+    output_folder = (
+        "battery_degradation_project/"
+        "battery_intelligence_platform/"
+        "outputs/dva_analysis"
+    )
+
+    save_dva_results(
+        dva_results,
+        dva_cycle_summary,
+        dva_summary,
+        output_folder,
+    )
+
+    print(
+        f"✅ DVA cycles analyzed: "
+        f"{dva_summary['cycles_analyzed']}"
     )

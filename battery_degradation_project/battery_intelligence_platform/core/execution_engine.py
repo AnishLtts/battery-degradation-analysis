@@ -1,9 +1,10 @@
 from pathlib import Path
-from analysis_router import (
+from analysis_router import(
     should_run_soh,
     should_run_degradation,
     should_run_ica,
-    should_run_dva,
+    should_run_dva
+    
 )
 from analysis_runner import (
     run_soh_analysis,
@@ -136,6 +137,16 @@ def execute_analysis_plan(
 
 Capacity Graph:
 outputs/graphs/capacity_vs_cycle.png
+
+ICA Analysis: Completed
+ICA Cycles Analyzed: 168
+ICA Graph:
+outputs/ica_analysis/ica_analysis.png
+
+DVA Analysis: Completed
+DVA Cycles Analyzed: 168
+DVA Graph:
+outputs/dva_analysis/dva_analysis.png
     """
     reports_folder = Path(
     "battery_degradation_project/battery_intelligence_platform/outputs/reports"
@@ -225,6 +236,8 @@ outputs/graphs/capacity_vs_cycle.png
     if should_run_dva(
         capability_report
     ):
-        run_dva_analysis()
+        run_dva_analysis(
+           normalized_data,
+        )
 
     print("=" * 60)
