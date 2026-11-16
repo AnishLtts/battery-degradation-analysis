@@ -14,6 +14,11 @@ PROJECT_ROOT = (
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
 
+from analytics.ica_dva.ica_analyzer import (
+    analyze_ica,
+    save_ica_results,
+)
+
 
 from analytics.soh_engine import (
     calculate_capacity_soh,
@@ -116,9 +121,38 @@ def run_degradation_analysis(
     return degradation_results
 
 
-def run_ica_analysis():
+def run_ica_analysis(
+    dataframe,
+):
     print(
-        "✅ Incremental Capacity Analysis executed"
+        "🚀 Starting Incremental Capacity Analysis"
+    )
+
+    (
+        ica_results,
+        ica_cycle_summary,
+        ica_summary,
+        discharge_info,
+    ) = analyze_ica(
+        dataframe
+    )
+
+    output_folder = (
+        "battery_degradation_project/"
+        "battery_intelligence_platform/"
+        "outputs/ica_analysis"
+    )
+
+    save_ica_results(
+        ica_results,
+        ica_cycle_summary,
+        ica_summary,
+        output_folder,
+    )
+
+    print(
+        f"✅ ICA cycles analyzed: "
+        f"{ica_summary['cycles_analyzed']}"
     )
 
 

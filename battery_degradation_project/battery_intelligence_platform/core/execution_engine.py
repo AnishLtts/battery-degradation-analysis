@@ -159,7 +159,40 @@ outputs/graphs/capacity_vs_cycle.png
     print(
     f"Report saved: {report_file}"
     )
+    import pandas as pd
 
+    summary_df = pd.DataFrame(
+    {
+        "Metric": [
+            "Health Score",
+            "Battery Grade",
+            "Lifecycle Status",
+            "Latest SOH",
+            "Capacity Loss",
+            "Initial Capacity",
+            "Final Capacity",
+            "Capacity Fade",
+        ],
+        "Value": [
+            health_score,
+            battery_grade,
+            lifecycle_status,
+            latest_soh,
+            capacity_loss,
+            initial_capacity,
+            final_capacity,
+            capacity_fade,
+        ],
+    }
+)
+    summary_df.to_csv(
+    reports_folder / "battery_summary.csv",
+    index=False,
+)
+
+    print(
+    f"Summary saved: {reports_folder / 'battery_summary.csv'}"
+)
     if latest_soh >= 90:
          recommendation = "Battery is in excellent condition."
     elif latest_soh >= 80:
@@ -185,7 +218,9 @@ outputs/graphs/capacity_vs_cycle.png
     if should_run_ica(
         capability_report
     ):
-        run_ica_analysis()
+        run_ica_analysis(
+           normalized_data,
+        )
 
     if should_run_dva(
         capability_report
