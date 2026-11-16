@@ -37,21 +37,59 @@ def run_soh_analysis(
         f"{len(soh_results)}"
     )
     print(soh_results.head())
-    return soh_results
+    print(soh_results.columns)
 
+    import matplotlib.pyplot as plt
+
+    plt.figure(figsize=(10, 5))
+
+    plt.plot(
+    soh_results["cycle"],
+    soh_results["soh_percent"],
+    linewidth=2,
+    )
+
+    plt.title(
+    "State of Health vs Cycle"
+    )
+    plt.xlabel(
+    "Cycle"
+    )
+    plt.ylabel(
+    "SOH (%)"
+    )
+
+    plt.grid(True)
+
+    plt.show()
+
+    # Capacity vs Cycle Graph
+    plt.figure(figsize=(10, 5))
+
+    plt.plot(
+    soh_results["cycle"],
+    soh_results["capacity_ah"],
+    linewidth=2,
+    )
+
+    plt.title(
+    "Capacity vs Cycle"
+    )
+    plt.xlabel(
+    "Cycle"
+    )
+    plt.ylabel(
+    "Capacity (Ah)"
+    )
+
+    plt.grid(True)
+
+    plt.show()
+    return soh_results 
 def run_degradation_analysis(
     dataframe,
 ):
-    print(
-        "🚀 Starting Degradation Analysis"
-    )
-
-    print(
-        f"Rows received: {len(dataframe)}"
-    )
-    print(
-        "🚀 Starting Degradation Analysis"
-    )
+    print("🚀 Starting Degradation Analysis")
 
     cycle_capacity = (
         create_cycle_capacity_table(
@@ -59,16 +97,20 @@ def run_degradation_analysis(
         )
     )
 
-    degradation_results, degradation_summary= (
+    degradation_results, degradation_summary = (
         calculate_degradation_metrics(
             cycle_capacity
         )
     )
 
     print(
-    f"✅ Degradation records generated: "
-    f"{len(degradation_results)}"
+        f"✅ Degradation records generated: "
+        f"{len(degradation_results)}"
     )
+
+    return degradation_results
+
+
 def run_ica_analysis():
     print(
         "✅ Incremental Capacity Analysis executed"

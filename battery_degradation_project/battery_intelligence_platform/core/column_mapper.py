@@ -28,6 +28,14 @@ COLUMN_ALIASES = {
         "seconds",
         "sec",
         "t_s",
+        "timestamp",
+        "time_stamp",
+        "datetime",
+        "date_time",
+        "event_time",
+        "recorded_time",
+        "log_time",
+        "measurement_time",
     ],
 
     "voltage_v": [
@@ -166,6 +174,9 @@ COLUMN_ALIASES = {
         "state_of_charge",
         "state_of_charge_percent",
         "state_of_charge_percentage",
+        "soc_pct",
+        "battery_soc",
+        "pack_soc",
     ],
 
     "soh_percent": [
@@ -175,6 +186,9 @@ COLUMN_ALIASES = {
         "state_of_health",
         "state_of_health_percent",
         "state_of_health_percentage",
+        "battery_soh",
+        "pack_soh",
+        "soh_pct",
     ],
 
     "battery_id": [
@@ -192,6 +206,14 @@ COLUMN_ALIASES = {
         "cell_index",
         "sample_id",
         "device_id",
+        "vehicle_id",
+        "vehicle",
+        "ev_id",
+        "car_id",
+        "asset_id",
+        "pack_id",
+        "module_id",
+        "unit_id",
     ],
 
     "test_id": [
