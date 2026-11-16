@@ -131,6 +131,11 @@ def execute_analysis_plan(
     Initial Capacity: {initial_capacity:.3f} Ah
     Final Capacity: {final_capacity:.3f} Ah
     Capacity Fade: {capacity_fade:.3f} Ah
+    SOH Graph:
+    outputs/graphs/soh_vs_cycle.png
+
+Capacity Graph:
+outputs/graphs/capacity_vs_cycle.png
     """
     reports_folder = Path(
     "battery_degradation_project/battery_intelligence_platform/outputs/reports"
