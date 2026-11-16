@@ -60,6 +60,9 @@ def run_soh_analysis(
     )
 
     plt.grid(True)
+    plt.savefig(
+    "battery_degradation_project/battery_intelligence_platform/outputs/graphs/soh_vs_cycle.png"
+    )
 
     plt.show()
 
@@ -83,7 +86,9 @@ def run_soh_analysis(
     )
 
     plt.grid(True)
-
+    plt.savefig(
+    "battery_degradation_project/battery_intelligence_platform/outputs/graphs/capacity_vs_cycle.png"
+)
     plt.show()
     return soh_results 
 def run_degradation_analysis(
