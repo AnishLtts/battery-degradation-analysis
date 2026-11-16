@@ -1,3 +1,4 @@
+from pathlib import Path
 from analysis_router import (
     should_run_soh,
     should_run_degradation,
@@ -116,6 +117,43 @@ def execute_analysis_plan(
     print(
         f"Capacity Fade: {capacity_fade:.3f} Ah"
       )
+    report_text = f"""
+    
+    BATTERY INTELLIGENCE REPORT
+
+    Battery Health Score: {health_score}/100
+    Battery Grade: {battery_grade}
+    Lifecycle Status: {lifecycle_status}
+
+    Latest SOH: {latest_soh:.2f}%
+    Capacity Loss: {capacity_loss:.2f}%
+
+    Initial Capacity: {initial_capacity:.3f} Ah
+    Final Capacity: {final_capacity:.3f} Ah
+    Capacity Fade: {capacity_fade:.3f} Ah
+    """
+    reports_folder = Path(
+    "battery_degradation_project/battery_intelligence_platform/outputs/reports"
+    )
+
+    reports_folder.mkdir(
+    parents=True,
+    exist_ok=True,
+    )
+
+    report_file = (
+    reports_folder / "battery_report.txt"
+    )
+
+    with open(
+    report_file,
+    "w",
+    ) as file:
+     file.write(report_text)
+
+    print(
+    f"Report saved: {report_file}"
+    )
 
     if latest_soh >= 90:
          recommendation = "Battery is in excellent condition."
