@@ -16,7 +16,64 @@ from the three real entry points.
 
 ---
 
-## 1. Block Diagram (components + who imports whom)
+## 1. Reading order — open these files in this sequence
+
+The file Explorer sorts alphabetically, which has nothing to do with execution
+order. If you (or anyone new to this project) want to read the source files
+in the actual order they run, pick the entry point you care about and follow
+its numbered list top to bottom.
+
+### A. `dataset_profiler.py` — the full pipeline (recommended starting point)
+
+This is the one that produced `outputs/unit_conversion_test/`'s 5 subfolders.
+
+1. `core/dataset_profiler.py` — start here, this is the script you run
+2. `core/file_reader.py` — loads the dataset file
+3. `core/column_mapper.py` — maps messy column names to standard ones
+4. `core/unit_normalizer.py` — converts units, saves the normalized CSV
+5. *(back in `dataset_profiler.py`)* — checks which diagnostics are possible
+6. `analytics/diagnostics/voltage_diagnostics.py`
+7. `analytics/diagnostics/current_diagnostics.py`
+8. `analytics/diagnostics/temperature_diagnostics.py`
+9. `analytics/diagnostics/capacity_diagnostics.py`
+
+Steps 6–9 all run independently off the same normalized data from step 4 —
+none of them depend on each other, so the order among them doesn't matter.
+
+### B. `capability_engine.py` — SOH/degradation/ICA/DVA path
+
+1. `core/capability_engine.py` — start here
+2. `core/file_reader.py`
+3. `core/column_mapper.py`
+4. `core/unit_normalizer.py`
+5. *(back in `capability_engine.py`)* — builds the capability report
+6. `core/execution_engine.py` — decides what to run
+7. `core/analysis_router.py` — pure yes/no gatekeeping
+8. `core/analysis_runner.py` — dispatches to whichever of these apply:
+   - `analytics/soh_engine.py`
+   - `analytics/degradation_analyzer.py`
+   - `analytics/ica_dva/ica_analyzer.py`
+   - `analytics/ica_dva/dva_analyzer.py`
+
+### C. `basic_analysis.py` — quick charts only
+
+1. `analytics/basic_analysis.py` — start here
+2. `core/file_reader.py`
+3. `core/column_mapper.py`
+
+(No `unit_normalizer.py` step in this path — charts are drawn from
+column-mapped but not unit-converted data.)
+
+### Not part of any reading order above
+
+These files are complete and runnable on their own, but no entry point ever
+calls them — see §4 for details: `core/cycle_feature_adapter.py`,
+`analytics/soc/soc_estimator.py`, `analytics/soc/soc_capability_checker.py`,
+`analytics/ica_dva/ica_dva_capability_checker.py`.
+
+---
+
+## 2. Block Diagram (components + who imports whom)
 
 Color key: 🟡 yellow = **orphaned** (works standalone, but no pipeline calls
 it).
@@ -118,7 +175,7 @@ flowchart TD
 
 ---
 
-## 2. Flow Diagram (what actually happens when you run each entry point)
+## 3. Flow Diagram (what actually happens when you run each entry point)
 
 ```mermaid
 flowchart TD
@@ -161,7 +218,7 @@ normalization + all four diagnostics into one run.
 
 ---
 
-## 3. Orphaned code — not dead, but not wired into any pipeline
+## 4. Orphaned code — not dead, but not wired into any pipeline
 
 These files are fully implemented and runnable on their own (each has its own
 `if __name__ == "__main__":`), but **none of the three entry points
@@ -174,7 +231,7 @@ file.
 - `analytics/soc/soc_capability_checker.py` — checks if SOC estimation is feasible
 - `analytics/ica_dva/ica_dva_capability_checker.py` — checks if ICA/DVA is feasible before running them
 
-## 4. One-liner reference: what each block does, input → output
+## 5. One-liner reference: what each block does, input → output
 
 ### Entry points
 
