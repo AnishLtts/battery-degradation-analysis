@@ -6,9 +6,13 @@ from the three real entry points.
 
 > **Update:** the dead code originally found here (`unit_normalizer_backup.py`
 > and a duplicate `calculate_capacity_soh` function in `soh_engine.py`) has
-> since been deleted from the project. This document has been updated to
-> remove those entries; only the orphaned-code and duplicated-logic notes
-> remain, since those are still present.
+> since been deleted from the project. The duplicated-logic issue (temperature
+> and capacity diagnostics re-reading the file from disk with their own private
+> column-mapping copy) has also been fixed — both now reuse
+> `core/file_reader.py` / `core/column_mapper.py` and accept the
+> already-normalized in-memory data, exactly like voltage and current
+> diagnostics. Only the orphaned-code note remains, since that is still
+> present.
 
 ---
 
@@ -39,8 +43,8 @@ flowchart TD
     subgraph DIAG["analytics/diagnostics/"]
         VD["voltage_diagnostics.py"]
         CD["current_diagnostics.py"]
-        TD["temperature_diagnostics.py<br/>(own copy of loader/mapper)"]
-        CAD["capacity_diagnostics.py<br/>(own copy of loader/mapper)"]
+        TD["temperature_diagnostics.py"]
+        CAD["capacity_diagnostics.py"]
     end
 
     subgraph SOC["analytics/soc/"]
@@ -80,13 +84,17 @@ flowchart TD
     DP --> UN
     DP --> VD
     DP --> CD
-    DP -. "re-reads file from disk\n(bypasses UN/CM)" .-> TD
-    DP -. "re-reads file from disk\n(bypasses UN/CM)" .-> CAD
+    DP --> TD
+    DP --> CAD
 
     VD --> FR
     VD --> CM
     CD --> FR
     CD --> CM
+    TD --> FR
+    TD --> CM
+    CAD --> FR
+    CAD --> CM
     IA --> FR
     IA --> CM
     DA --> FR
@@ -139,8 +147,8 @@ flowchart TD
     DP4 --> DP5["run_automatic_diagnostics()"]
     DP5 --> DP6a["Voltage: analyze_voltage_diagnostics(dataframe)\n(reuses already-normalized data)"]
     DP5 --> DP6b["Current: analyze_current_diagnostics(dataframe)\n(reuses already-normalized data)"]
-    DP5 --> DP6c["Temperature: run_temperature_diagnostics(path)\n⚠ reloads file from disk, own column logic"]
-    DP5 --> DP6d["Capacity: run_capacity_diagnostics(path)\n⚠ reloads file from disk, own column logic"]
+    DP5 --> DP6c["Temperature: analyze_temperature_diagnostics(dataframe)\n(reuses already-normalized data)"]
+    DP5 --> DP6d["Capacity: analyze_capacity_diagnostics(dataframe)\n(reuses already-normalized data)"]
     DP6a --> DP7["→ outputs/<name>/voltage_diagnostics/"]
     DP6b --> DP8["→ outputs/<name>/current_diagnostics/"]
     DP6c --> DP9["→ outputs/<name>/temperature_diagnostics/"]
@@ -166,21 +174,7 @@ file.
 - `analytics/soc/soc_capability_checker.py` — checks if SOC estimation is feasible
 - `analytics/ica_dva/ica_dva_capability_checker.py` — checks if ICA/DVA is feasible before running them
 
-## 4. Duplicated (not dead, but risky) logic
-
-`analytics/diagnostics/temperature_diagnostics.py` and `capacity_diagnostics.py`
-each define their **own private copies** of `normalize_column_name`,
-`standardize_columns`, and `load_dataset` instead of reusing
-`core/file_reader.py` and `core/column_mapper.py` like every other module
-does. When `dataset_profiler.py` runs the full pipeline, voltage and current
-diagnostics reuse the already-normalized in-memory data, but **temperature and
-capacity diagnostics re-open the raw file from disk and re-map columns using
-their own simpler logic** — meaning they could disagree with the rest of the
-pipeline on units/columns for an edge-case dataset.
-
----
-
-## 5. One-liner reference: what each block does, input → output
+## 4. One-liner reference: what each block does, input → output
 
 ### Entry points
 
@@ -210,8 +204,8 @@ pipeline on units/columns for an edge-case dataset.
 |---|---|---|---|
 | `voltage_diagnostics.py` | Checks per-cycle voltage range/safety against thresholds | Normalized DataFrame | Summary, cycle summary, detailed records, warnings CSVs + chart |
 | `current_diagnostics.py` | Checks current draw patterns, spikes, sign convention, stability | Normalized DataFrame | Same CSV/chart pattern for current |
-| `temperature_diagnostics.py` ⚠ | Checks per-cycle temperature range/rise and risk classification | Dataset file path (re-reads file itself) | Same CSV/chart pattern for temperature |
-| `capacity_diagnostics.py` ⚠ | Tracks capacity fade per cycle, retention %, abnormal drops | Dataset file path (re-reads file itself) | Same CSV/chart pattern for capacity |
+| `temperature_diagnostics.py` | Checks per-cycle temperature range/rise and risk classification | Normalized DataFrame | Same CSV/chart pattern for temperature |
+| `capacity_diagnostics.py` | Tracks capacity fade per cycle, retention %, abnormal drops | Normalized DataFrame | Same CSV/chart pattern for capacity |
 
 ### analytics/soc/
 

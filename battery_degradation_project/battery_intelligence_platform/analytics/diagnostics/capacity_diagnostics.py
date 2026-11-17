@@ -7,40 +7,25 @@ import pandas as pd
 
 
 # ============================================================
-# SETTINGS
+# LOCATE PLATFORM FOLDERS
 # ============================================================
 
-COLUMN_ALIASES = {
-    "cycle": [
-        "cycle",
-        "cycle_index",
-        "cycle_number",
-        "cycle_no",
-    ],
-    "capacity_ah": [
-        "capacity_ah",
-        "capacity",
-        "discharge_capacity_ah",
-        "charge_capacity_ah",
-        "measured_capacity",
-    ],
-    "time_s": [
-        "time_s",
-        "time",
-        "test_time",
-        "elapsed_time_s",
-    ],
-    "voltage_v": [
-        "voltage_v",
-        "voltage",
-        "battery_voltage_v",
-    ],
-    "current_a": [
-        "current_a",
-        "current",
-        "battery_current_a",
-    ],
-}
+CURRENT_FILE = Path(__file__).resolve()
+PLATFORM_FOLDER = CURRENT_FILE.parent.parent.parent
+CORE_FOLDER = PLATFORM_FOLDER / "core"
+
+sys.path.insert(0, str(CORE_FOLDER))
+
+from file_reader import load_battery_dataset
+from column_mapper import (
+    apply_column_mapping,
+    detect_column_mapping,
+)
+
+
+# ============================================================
+# SETTINGS
+# ============================================================
 
 # Diagnostic defaults
 END_OF_LIFE_RETENTION_PERCENT = 80.0
@@ -48,89 +33,14 @@ ABNORMAL_DROP_PERCENT = 2.0
 
 
 # ============================================================
-# DATA LOADING
+# VALIDATION
 # ============================================================
 
-def normalize_column_name(column_name):
-    normalized = str(column_name).strip().lower()
-
-    replacements = {
-        "°": "",
-        "(": "_",
-        ")": "",
-        "[": "_",
-        "]": "",
-        "/": "_",
-        "\\": "_",
-        "-": "_",
-        " ": "_",
-        ".": "_",
-    }
-
-    for old_value, new_value in replacements.items():
-        normalized = normalized.replace(
-            old_value,
-            new_value,
-        )
-
-    while "__" in normalized:
-        normalized = normalized.replace("__", "_")
-
-    return normalized.strip("_")
-
-
-def standardize_columns(dataframe):
-    dataframe = dataframe.copy()
-
-    dataframe.columns = [
-        normalize_column_name(column)
-        for column in dataframe.columns
-    ]
-
-    rename_map = {}
-
-    for standard_name, aliases in COLUMN_ALIASES.items():
-        normalized_aliases = {
-            normalize_column_name(alias)
-            for alias in aliases
-        }
-
-        for column in dataframe.columns:
-            if column in normalized_aliases:
-                rename_map[column] = standard_name
-                break
-
-    return dataframe.rename(columns=rename_map)
-
-
-def load_dataset(dataset_path):
-    dataset_path = Path(dataset_path).expanduser()
-
-    if not dataset_path.exists():
-        raise FileNotFoundError(
-            f"Dataset was not found: {dataset_path}"
-        )
-
-    if not dataset_path.is_file():
-        raise ValueError(
-            f"The supplied path is not a file: {dataset_path}"
-        )
-
-    if dataset_path.suffix.lower() != ".csv":
-        raise ValueError(
-            "Capacity diagnostics currently supports CSV files only."
-        )
-
-    dataframe = pd.read_csv(
-        dataset_path,
-        low_memory=False,
-    )
-
-    if dataframe.empty:
-        raise ValueError("The dataset is empty.")
-
-    dataframe = standardize_columns(dataframe)
-
+def validate_capacity_dataset(dataframe):
+    """
+    Validate that a column-mapped dataframe has what capacity
+    diagnostics needs.
+    """
     required_columns = [
         "cycle",
         "capacity_ah",
@@ -148,7 +58,7 @@ def load_dataset(dataset_path):
             + ", ".join(missing_columns)
         )
 
-    return dataframe, dataset_path.resolve()
+    return dataframe.copy()
 
 
 def prepare_data(dataframe):
@@ -427,7 +337,7 @@ def build_analysis_summary(
     return summary
 
 
-def build_warnings(cycle_results):
+def build_capacity_warnings(cycle_results):
     warnings = []
 
     below_eol = cycle_results[
@@ -666,46 +576,19 @@ def create_capacity_graph(
 # OUTPUT
 # ============================================================
 
-def get_output_directory(dataset_path):
-    dataset_path = Path(dataset_path).resolve()
-
-    if (
-        dataset_path.name.lower()
-        == "normalized_battery_data.csv"
-        and dataset_path.parent.name.lower()
-        == "unit_normalization"
-    ):
-        dataset_output_root = dataset_path.parent.parent
-    else:
-        project_root = (
-            Path(__file__).resolve().parents[2]
-        )
-
-        dataset_output_root = (
-            project_root
-            / "outputs"
-            / dataset_path.stem
-        )
-
-    output_directory = (
-        dataset_output_root
-        / "capacity_diagnostics"
-    )
+def save_capacity_results(
+    cycle_results,
+    analysis_summary,
+    warnings,
+    output_directory,
+):
+    output_directory = Path(output_directory)
 
     output_directory.mkdir(
         parents=True,
         exist_ok=True,
     )
 
-    return output_directory
-
-
-def save_results(
-    cycle_results,
-    analysis_summary,
-    warnings,
-    output_directory,
-):
     cycle_results_path = (
         output_directory
         / "capacity_cycle_results.csv"
@@ -758,12 +641,14 @@ def save_results(
 # MAIN PIPELINE
 # ============================================================
 
-def run_capacity_diagnostics(dataset_path):
-    dataframe, resolved_path = load_dataset(
-        dataset_path
-    )
+def analyze_capacity_diagnostics(dataframe):
+    """
+    Run the capacity diagnostics analysis on an already
+    column-mapped battery dataframe.
+    """
+    validated = validate_capacity_dataset(dataframe)
 
-    prepared = prepare_data(dataframe)
+    prepared = prepare_data(validated)
 
     cycle_summary = extract_cycle_capacity(
         prepared
@@ -780,27 +665,7 @@ def run_capacity_diagnostics(dataset_path):
         initial_capacity,
     )
 
-    warnings = build_warnings(
-        cycle_results
-    )
-
-    output_directory = get_output_directory(
-        resolved_path
-    )
-
-    output_files = save_results(
-        cycle_results,
-        analysis_summary,
-        warnings,
-        output_directory,
-    )
-
-    return {
-        "output_directory": output_directory,
-        "output_files": output_files,
-        "analysis_summary": analysis_summary,
-        "warnings": warnings,
-    }
+    return prepared, cycle_results, analysis_summary
 
 
 def main():
@@ -820,8 +685,41 @@ def main():
         sys.exit(1)
 
     try:
-        results = run_capacity_diagnostics(
-            dataset_path
+        battery_data = load_battery_dataset(dataset_path)
+
+        mapping, unknown_columns = detect_column_mapping(
+            battery_data
+        )
+
+        standardized_data = apply_column_mapping(
+            battery_data,
+            mapping,
+        )
+
+        (
+            prepared,
+            cycle_results,
+            analysis_summary,
+        ) = analyze_capacity_diagnostics(
+            standardized_data
+        )
+
+        warnings = build_capacity_warnings(
+            cycle_results
+        )
+
+        output_directory = (
+            PLATFORM_FOLDER
+            / "outputs"
+            / Path(dataset_path).stem
+            / "capacity_diagnostics"
+        )
+
+        output_files = save_capacity_results(
+            cycle_results,
+            analysis_summary,
+            warnings,
+            output_directory,
         )
 
         print(
@@ -830,23 +728,19 @@ def main():
 
         print(
             f"\nOutput folder:\n"
-            f"{results['output_directory']}"
+            f"{output_directory}"
         )
 
         print("\nGenerated files:")
 
-        for output_name, output_path in results[
-            "output_files"
-        ].items():
+        for output_name, output_path in output_files.items():
             print(
                 f"  {output_name}: {output_path}"
             )
 
         print("\nImportant summary:")
 
-        for _, row in results[
-            "analysis_summary"
-        ].iterrows():
+        for _, row in analysis_summary.iterrows():
             value = row["value"]
 
             if isinstance(
@@ -866,9 +760,7 @@ def main():
 
         print("\nWarnings:")
 
-        for _, row in results[
-            "warnings"
-        ].iterrows():
+        for _, row in warnings.iterrows():
             print(
                 f"  [{row['severity']}] "
                 f"{row['warning_type']}: "

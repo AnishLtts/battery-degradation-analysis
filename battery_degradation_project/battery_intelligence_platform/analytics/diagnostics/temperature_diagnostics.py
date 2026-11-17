@@ -7,147 +7,38 @@ import pandas as pd
 
 
 # ============================================================
-# COLUMN NAME DEFINITIONS
+# LOCATE PLATFORM FOLDERS
 # ============================================================
 
-COLUMN_ALIASES = {
-    "cycle": [
-        "cycle",
-        "cycle_index",
-        "cycle_number",
-        "cycle_no",
-        "cycleno",
-    ],
-    "time_s": [
-        "time_s",
-        "time",
-        "test_time",
-        "test_time_s",
-        "elapsed_time",
-        "elapsed_time_s",
-        "seconds",
-    ],
-    "temperature_c": [
-        "temperature_c",
-        "temperature",
-        "temp_c",
-        "temp",
-        "cell_temperature_c",
-        "battery_temperature_c",
-    ],
-    "current_a": [
-        "current_a",
-        "current",
-        "current_amp",
-        "current_amps",
-        "amps",
-    ],
-    "voltage_v": [
-        "voltage_v",
-        "voltage",
-        "cell_voltage_v",
-        "battery_voltage_v",
-    ],
-}
+CURRENT_FILE = Path(__file__).resolve()
+PLATFORM_FOLDER = CURRENT_FILE.parent.parent.parent
+CORE_FOLDER = PLATFORM_FOLDER / "core"
+
+sys.path.insert(0, str(CORE_FOLDER))
+
+from file_reader import load_battery_dataset
+from column_mapper import (
+    apply_column_mapping,
+    detect_column_mapping,
+)
 
 
 # ============================================================
-# HELPER FUNCTIONS
+# VALIDATION
 # ============================================================
 
-def normalize_column_name(column_name):
+def validate_temperature_dataset(dataframe):
     """
-    Convert a column name into a consistent lowercase format.
-    Example:
-        Temperature (C) -> temperature_c
+    Validate that a column-mapped dataframe has what temperature
+    diagnostics needs.
     """
-    normalized = str(column_name).strip().lower()
-
-    replacements = {
-        "°": "",
-        "(": "_",
-        ")": "",
-        "[": "_",
-        "]": "",
-        "/": "_",
-        "\\": "_",
-        "-": "_",
-        " ": "_",
-        ".": "_",
-    }
-
-    for old_value, new_value in replacements.items():
-        normalized = normalized.replace(old_value, new_value)
-
-    while "__" in normalized:
-        normalized = normalized.replace("__", "_")
-
-    return normalized.strip("_")
-
-
-def standardize_columns(dataframe):
-    """
-    Normalize dataset column names and map known aliases to the
-    standard names used by this diagnostics module.
-    """
-    dataframe = dataframe.copy()
-
-    dataframe.columns = [
-        normalize_column_name(column)
-        for column in dataframe.columns
-    ]
-
-    rename_map = {}
-
-    for standard_name, aliases in COLUMN_ALIASES.items():
-        normalized_aliases = {
-            normalize_column_name(alias)
-            for alias in aliases
-        }
-
-        for column in dataframe.columns:
-            if column in normalized_aliases:
-                rename_map[column] = standard_name
-                break
-
-    return dataframe.rename(columns=rename_map)
-
-
-def load_dataset(dataset_path):
-    """
-    Load a CSV dataset after validating its path.
-    """
-    dataset_path = Path(dataset_path).expanduser()
-
-    if not dataset_path.exists():
-        raise FileNotFoundError(
-            f"Dataset was not found: {dataset_path}"
-        )
-
-    if not dataset_path.is_file():
-        raise ValueError(
-            f"The supplied path is not a file: {dataset_path}"
-        )
-
-    if dataset_path.suffix.lower() != ".csv":
-        raise ValueError(
-            "Temperature diagnostics currently supports CSV files only."
-        )
-
-    dataframe = pd.read_csv(dataset_path, low_memory=False)
-
-    if dataframe.empty:
-        raise ValueError("The dataset is empty.")
-
-    dataframe = standardize_columns(dataframe)
-
     if "temperature_c" not in dataframe.columns:
         raise ValueError(
             "Temperature diagnostics requires a temperature column. "
             "Expected names include temperature_c, temp_c, or temperature."
         )
 
-    return dataframe, dataset_path
+    return dataframe.copy()
 
 
 def prepare_temperature_data(dataframe):
@@ -535,7 +426,7 @@ def build_analysis_summary(detailed, cycle_summary):
     return pd.DataFrame(summary_data)
 
 
-def build_warnings(detailed, cycle_summary):
+def build_temperature_warnings(detailed, cycle_summary):
     """
     Create human-readable thermal warnings.
     """
@@ -938,46 +829,7 @@ def create_temperature_graph(
 # OUTPUT HANDLING
 # ============================================================
 
-def get_output_directory(dataset_path):
-    """
-    Store the output in the dataset folder when the input is the
-    normalized dataset. This keeps the result under the existing
-    b0005_discharge_curves output directory.
-    """
-    dataset_path = Path(dataset_path).resolve()
-
-    if (
-        dataset_path.name.lower()
-        == "normalized_battery_data.csv"
-        and dataset_path.parent.name.lower()
-        == "unit_normalization"
-    ):
-        dataset_output_root = dataset_path.parent.parent
-    else:
-        project_root = (
-            Path(__file__).resolve().parents[2]
-        )
-
-        dataset_output_root = (
-            project_root
-            / "outputs"
-            / dataset_path.stem
-        )
-
-    output_directory = (
-        dataset_output_root
-        / "temperature_diagnostics"
-    )
-
-    output_directory.mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    return output_directory
-
-
-def save_results(
+def save_temperature_results(
     detailed,
     cycle_summary,
     analysis_summary,
@@ -987,6 +839,13 @@ def save_results(
     """
     Save all temperature diagnostic reports and the graph.
     """
+    output_directory = Path(output_directory)
+
+    output_directory.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+
     detailed_path = (
         output_directory
         / "temperature_detailed_records.csv"
@@ -1051,15 +910,14 @@ def save_results(
 # MAIN DIAGNOSTICS PIPELINE
 # ============================================================
 
-def run_temperature_diagnostics(dataset_path):
+def analyze_temperature_diagnostics(dataframe):
     """
-    Run the complete temperature diagnostics pipeline.
+    Run the temperature diagnostics analysis on an already
+    column-mapped battery dataframe.
     """
-    dataframe, resolved_dataset_path = load_dataset(
-        dataset_path
-    )
+    validated = validate_temperature_dataset(dataframe)
 
-    prepared = prepare_temperature_data(dataframe)
+    prepared = prepare_temperature_data(validated)
 
     detailed = build_detailed_records(prepared)
 
@@ -1070,29 +928,7 @@ def run_temperature_diagnostics(dataset_path):
         cycle_summary,
     )
 
-    warnings = build_warnings(
-        detailed,
-        cycle_summary,
-    )
-
-    output_directory = get_output_directory(
-        resolved_dataset_path
-    )
-
-    output_files = save_results(
-        detailed,
-        cycle_summary,
-        analysis_summary,
-        warnings,
-        output_directory,
-    )
-
-    return {
-        "output_directory": output_directory,
-        "output_files": output_files,
-        "analysis_summary": analysis_summary,
-        "warnings": warnings,
-    }
+    return prepared, detailed, cycle_summary, analysis_summary
 
 
 def main():
@@ -1112,8 +948,44 @@ def main():
         sys.exit(1)
 
     try:
-        results = run_temperature_diagnostics(
-            dataset_path
+        battery_data = load_battery_dataset(dataset_path)
+
+        mapping, unknown_columns = detect_column_mapping(
+            battery_data
+        )
+
+        standardized_data = apply_column_mapping(
+            battery_data,
+            mapping,
+        )
+
+        (
+            prepared,
+            detailed,
+            cycle_summary,
+            analysis_summary,
+        ) = analyze_temperature_diagnostics(
+            standardized_data
+        )
+
+        warnings = build_temperature_warnings(
+            detailed,
+            cycle_summary,
+        )
+
+        output_directory = (
+            PLATFORM_FOLDER
+            / "outputs"
+            / Path(dataset_path).stem
+            / "temperature_diagnostics"
+        )
+
+        output_files = save_temperature_results(
+            detailed,
+            cycle_summary,
+            analysis_summary,
+            warnings,
+            output_directory,
         )
 
         print(
@@ -1122,21 +994,17 @@ def main():
 
         print(
             f"\nOutput folder:\n"
-            f"{results['output_directory']}"
+            f"{output_directory}"
         )
 
         print("\nGenerated files:")
 
-        for file_name, file_path in results[
-            "output_files"
-        ].items():
+        for file_name, file_path in output_files.items():
             print(f"  {file_name}: {file_path}")
 
         print("\nImportant summary:")
 
-        for _, row in results[
-            "analysis_summary"
-        ].iterrows():
+        for _, row in analysis_summary.iterrows():
             value = row["value"]
 
             if isinstance(
@@ -1156,7 +1024,7 @@ def main():
 
         print("\nWarnings:")
 
-        for _, row in results["warnings"].iterrows():
+        for _, row in warnings.iterrows():
             print(
                 f"  [{row['severity']}] "
                 f"{row['warning_type']}: "

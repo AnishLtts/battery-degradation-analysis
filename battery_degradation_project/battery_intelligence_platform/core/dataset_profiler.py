@@ -65,11 +65,15 @@ from current_diagnostics import (
 )
 
 from temperature_diagnostics import (
-    run_temperature_diagnostics,
+    analyze_temperature_diagnostics,
+    build_temperature_warnings,
+    save_temperature_results,
 )
 
 from capacity_diagnostics import (
-    run_capacity_diagnostics,
+    analyze_capacity_diagnostics,
+    build_capacity_warnings,
+    save_capacity_results,
 )
 
 
@@ -1508,22 +1512,41 @@ def run_automatic_diagnostics(
                 "\n[TEMPERATURE] Running..."
             )
 
-            temperature_results = (
-                run_temperature_diagnostics(
-                    normalized_dataset_path
+            (
+                prepared_temperature_data,
+                temperature_detailed,
+                temperature_cycle_summary,
+                temperature_summary,
+            ) = analyze_temperature_diagnostics(
+                standardized_data.copy()
+            )
+
+            temperature_warnings = (
+                build_temperature_warnings(
+                    temperature_detailed,
+                    temperature_cycle_summary,
                 )
+            )
+
+            temperature_output_folder = (
+                output_root
+                / "temperature_diagnostics"
+            )
+
+            saved_files = save_temperature_results(
+                temperature_detailed,
+                temperature_cycle_summary,
+                temperature_summary,
+                temperature_warnings,
+                temperature_output_folder,
             )
 
             diagnostic_results["temperature"] = {
                 "status": "Completed",
                 "output_folder": str(
-                    temperature_results[
-                        "output_directory"
-                    ]
+                    temperature_output_folder
                 ),
-                "files": temperature_results[
-                    "output_files"
-                ],
+                "files": saved_files,
             }
 
             print(
@@ -1532,7 +1555,7 @@ def run_automatic_diagnostics(
 
             print(
                 "[TEMPERATURE] Output: "
-                f"{temperature_results['output_directory']}"
+                f"{temperature_output_folder}"
             )
 
         except Exception as error:
@@ -1576,22 +1599,38 @@ def run_automatic_diagnostics(
                 "\n[CAPACITY] Running..."
             )
 
-            capacity_results = (
-                run_capacity_diagnostics(
-                    normalized_dataset_path
+            (
+                prepared_capacity_data,
+                capacity_cycle_results,
+                capacity_summary,
+            ) = analyze_capacity_diagnostics(
+                standardized_data.copy()
+            )
+
+            capacity_warnings = (
+                build_capacity_warnings(
+                    capacity_cycle_results
                 )
+            )
+
+            capacity_output_folder = (
+                output_root
+                / "capacity_diagnostics"
+            )
+
+            saved_files = save_capacity_results(
+                capacity_cycle_results,
+                capacity_summary,
+                capacity_warnings,
+                capacity_output_folder,
             )
 
             diagnostic_results["capacity"] = {
                 "status": "Completed",
                 "output_folder": str(
-                    capacity_results[
-                        "output_directory"
-                    ]
+                    capacity_output_folder
                 ),
-                "files": capacity_results[
-                    "output_files"
-                ],
+                "files": saved_files,
             }
 
             print(
@@ -1600,7 +1639,7 @@ def run_automatic_diagnostics(
 
             print(
                 "[CAPACITY] Output: "
-                f"{capacity_results['output_directory']}"
+                f"{capacity_output_folder}"
             )
 
         except Exception as error:
