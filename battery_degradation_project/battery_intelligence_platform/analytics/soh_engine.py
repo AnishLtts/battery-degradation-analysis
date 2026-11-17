@@ -285,58 +285,6 @@ def assign_health_category(soh_percent):
 
 
 # ============================================================
-# SOH CALCULATION
-# ============================================================
-
-def calculate_capacity_soh(
-    dataframe,
-    rated_capacity_ah=None,
-    initial_records=3,
-):
-    """
-    Calculate capacity-based battery SOH.
-
-    SOH (%) =
-        measured capacity / reference capacity * 100
-    """
-
-    valid_data = remove_invalid_capacity_rows(
-        dataframe
-    )
-
-    valid_data = sort_battery_records(
-        valid_data
-    )
-
-    valid_data = add_battery_cycle_number(
-        valid_data
-    )
-
-    soh_data = calculate_reference_capacity(
-        valid_data,
-        rated_capacity_ah=rated_capacity_ah,
-        initial_records=initial_records,
-    )
-
-    soh_data["soh_percent"] = (
-        soh_data["capacity_ah"]
-        / soh_data["reference_capacity_ah"]
-        * 100
-    )
-
-    soh_data["capacity_loss_percent"] = (
-        100 - soh_data["soh_percent"]
-    )
-
-    soh_data["health_category"] = (
-        soh_data["soh_percent"]
-        .apply(assign_health_category)
-    )
-
-    return soh_data
-
-
-# ============================================================
 # BATTERY SUMMARY
 # ============================================================
 
