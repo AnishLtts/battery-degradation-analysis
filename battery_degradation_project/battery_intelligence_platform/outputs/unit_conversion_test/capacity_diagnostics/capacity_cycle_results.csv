@@ -1,0 +1,3 @@
+cycle,capacity_ah,minimum_capacity_ah,average_capacity_ah,record_count,capacity_retention_percent,capacity_loss_ah,capacity_loss_percent,cycle_capacity_change_ah,cycle_capacity_change_percent,capacity_drop_percent,abnormal_drop_flag,below_80_percent_flag,rolling_capacity_ah
+1,1.5,0.0,0.75,4,100.0,0.0,0.0,,,,False,False,1.5
+2,1.44,0.0,0.72,4,96.0,0.06000000000000005,4.0,-0.06000000000000005,-4.0000000000000036,4.0000000000000036,True,False,1.47

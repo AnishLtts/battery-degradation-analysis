@@ -1,0 +1,16 @@
+metric,value,unit
+Total records analyzed,50285.0,records
+Total cycles analyzed,168.0,cycles
+Minimum dataset temperature,23.214801785728056,C
+Maximum dataset temperature,41.45023191903855,C
+Average dataset temperature,32.81699079625486,C
+Median dataset temperature,32.828943578247284,C
+Temperature standard deviation,3.987515373827195,C
+Overall temperature range,18.235430133310494,C
+Hottest cycle,139.0,cycle
+Coldest cycle,47.0,cycle
+Records above 50 C,0.0,records
+Records above 60 C,0.0,records
+Records below 0 C,0.0,records
+Rapid heating records,0.0,records
+Maximum cycle temperature trend,0.021027885431552994,C per cycle

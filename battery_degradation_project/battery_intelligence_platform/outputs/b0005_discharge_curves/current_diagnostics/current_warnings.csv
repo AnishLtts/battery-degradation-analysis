@@ -1,0 +1,2 @@
+warning
+"Current magnitudes, abrupt changes, and robust spike metrics were not used for safety classification because nominal capacity, permitted C-rate, chemistry, and test protocol are not known."

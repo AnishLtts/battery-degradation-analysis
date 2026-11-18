@@ -1,0 +1,2 @@
+severity,warning_type,affected_records,affected_cycles,message
+Information,No major thermal warning,0,0,No temperature values crossed the default diagnostic warning thresholds.
