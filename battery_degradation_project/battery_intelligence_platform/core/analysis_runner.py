@@ -30,7 +30,13 @@ from analytics.degradation.degradation_analyzer import (
    create_cycle_capacity_table,
    calculate_degradation_metrics,
 )
-    
+from analytics.soc.soc_estimator import (
+    validate_soc_dataset,
+    calculate_coulomb_counting,
+    estimate_soc,
+    save_soc_results,
+)
+
 def run_soh_analysis(
     dataframe,
 ):
@@ -48,6 +54,17 @@ def run_soh_analysis(
     print(soh_results.columns)
 
     import matplotlib.pyplot as plt
+
+    graphs_folder = Path(
+        "battery_degradation_project/"
+        "battery_intelligence_platform/"
+        "outputs/graphs"
+    )
+
+    graphs_folder.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
 
     plt.figure(figsize=(10, 5))
 
@@ -191,4 +208,41 @@ def run_dva_analysis(
     print(
         f"✅ DVA cycles analyzed: "
         f"{dva_summary['cycles_analyzed']}"
+    )
+
+
+def run_soc_analysis(
+    dataframe,
+):
+    print(
+        "🚀 Starting Coulomb-Counting SOC Estimation"
+    )
+
+    validated_data = validate_soc_dataset(
+        dataframe
+    )
+
+    integrated_data = calculate_coulomb_counting(
+        validated_data
+    )
+
+    soc_results, cycle_summary = estimate_soc(
+        integrated_data
+    )
+
+    output_folder = (
+        "battery_degradation_project/"
+        "battery_intelligence_platform/"
+        "outputs/soc_analysis"
+    )
+
+    save_soc_results(
+        soc_results,
+        cycle_summary,
+        output_folder,
+    )
+
+    print(
+        f"✅ SOC cycles analyzed: "
+        f"{cycle_summary['cycle'].nunique()}"
     )

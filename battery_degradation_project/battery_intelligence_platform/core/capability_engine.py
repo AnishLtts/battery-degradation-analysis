@@ -36,15 +36,13 @@ ANALYSIS_REQUIREMENTS = {
         "required_all": [
             "time_s",
             "current_a",
+            "voltage_v",
+            "capacity_ah",
         ],
         "required_any": [],
-        "additional_input": [
-            "initial_soc",
-            "rated_capacity_ah",
-        ],
         "description": (
-            "Estimates SOC by integrating current over time. "
-            "Initial SOC and rated capacity must be supplied."
+            "Estimates SOC per cycle from measured capacity, "
+            "cross-checked against current integration."
         ),
     },
 

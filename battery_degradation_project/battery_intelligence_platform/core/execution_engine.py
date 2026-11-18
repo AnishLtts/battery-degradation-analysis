@@ -4,14 +4,16 @@ from analysis_router import(
     should_run_soh,
     should_run_degradation,
     should_run_ica,
-    should_run_dva
-    
+    should_run_dva,
+    should_run_soc,
+
 )
 from analysis_runner import (
     run_soh_analysis,
     run_degradation_analysis,
     run_ica_analysis,
     run_dva_analysis,
+    run_soc_analysis,
 )
 
 def execute_analysis_plan(
@@ -302,6 +304,13 @@ def execute_analysis_plan(
         capability_report
     ):
         run_dva_analysis(
+           normalized_data,
+        )
+
+    if should_run_soc(
+        capability_report
+    ):
+        run_soc_analysis(
            normalized_data,
         )
 

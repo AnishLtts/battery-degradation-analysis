@@ -11,8 +11,19 @@ from the three real entry points.
 > column-mapping copy) has also been fixed — both now reuse
 > `core/file_reader.py` / `core/column_mapper.py` and accept the
 > already-normalized in-memory data, exactly like voltage and current
-> diagnostics. Only the orphaned-code note remains, since that is still
-> present.
+> diagnostics.
+>
+> **Update 2:** the SOC pair is no longer orphaned. `analytics/soc/soc_estimator.py`
+> is now wired into the `capability_engine.py` path — `capability_engine.py`'s
+> requirement for "Coulomb-Counting SOC Estimation" was corrected to match what
+> the estimator actually needs (`time_s`, `current_a`, `voltage_v`,
+> `capacity_ah`), `analysis_router.py` gained `should_run_soc()`,
+> `analysis_runner.py` gained `run_soc_analysis()`, and `execution_engine.py`
+> now calls it alongside SOH/degradation/ICA/DVA. The three files that stayed
+> genuinely unused — `core/cycle_feature_adapter.py`,
+> `analytics/soc/soc_capability_checker.py`, and
+> `analytics/ica_dva/ica_dva_capability_checker.py` — have been deleted from
+> the project entirely (confirmed zero references anywhere before removal).
 
 ---
 
@@ -54,6 +65,7 @@ none of them depend on each other, so the order among them doesn't matter.
    - `analytics/degradation_analyzer.py`
    - `analytics/ica_dva/ica_analyzer.py`
    - `analytics/ica_dva/dva_analyzer.py`
+   - `analytics/soc/soc_estimator.py`
 
 ### C. `basic_analysis.py` — quick charts only
 
@@ -64,19 +76,9 @@ none of them depend on each other, so the order among them doesn't matter.
 (No `unit_normalizer.py` step in this path — charts are drawn from
 column-mapped but not unit-converted data.)
 
-### Not part of any reading order above
-
-These files are complete and runnable on their own, but no entry point ever
-calls them — see §4 for details: `core/cycle_feature_adapter.py`,
-`analytics/soc/soc_estimator.py`, `analytics/soc/soc_capability_checker.py`,
-`analytics/ica_dva/ica_dva_capability_checker.py`.
-
 ---
 
 ## 2. Block Diagram (components + who imports whom)
-
-Color key: 🟡 yellow = **orphaned** (works standalone, but no pipeline calls
-it).
 
 ```mermaid
 flowchart TD
@@ -94,7 +96,6 @@ flowchart TD
         EE["execution_engine.py"]
         AR["analysis_router.py"]
         ARUN["analysis_runner.py"]
-        CFA["cycle_feature_adapter.py"]
     end
 
     subgraph DIAG["analytics/diagnostics/"]
@@ -106,13 +107,11 @@ flowchart TD
 
     subgraph SOC["analytics/soc/"]
         SE["soc_estimator.py"]
-        SCC["soc_capability_checker.py"]
     end
 
     subgraph ICADVA["analytics/ica_dva/"]
         IA["ica_analyzer.py"]
         DA["dva_analyzer.py"]
-        IDC["ica_dva_capability_checker.py"]
     end
 
     subgraph OTHERA["analytics/ (other)"]
@@ -135,6 +134,7 @@ flowchart TD
     ARUN --> DA
     ARUN --> SOH
     ARUN --> DEG
+    ARUN --> SE
 
     DP --> FR
     DP --> CM
@@ -160,17 +160,8 @@ flowchart TD
     SOH --> CM
     SE --> FR
     SE --> CM
-    SCC --> FR
-    SCC --> CM
-    IDC --> FR
-    IDC --> CM
-    CFA --> FR
 
     CM --> DATA
-
-    class CFA,SE,SCC,IDC orphan
-
-    classDef orphan fill:#fff3cd,stroke:#cc9900,stroke-width:2px,color:#664d00
 ```
 
 ---
@@ -192,8 +183,8 @@ flowchart TD
     CE3 --> CE4["evaluate_dataset_capabilities()\n→ what CAN this dataset support?"]
     CE4 --> CE5["print_capability_report() + print_execution_plan()"]
     CE5 --> CE6["execute_analysis_plan()"]
-    CE6 --> CE7{"should_run_soh / degradation / ica / dva?\n(analysis_router.py)"}
-    CE7 -->|yes| CE8["analysis_runner.py calls:\nsoh_engine / degradation_analyzer / ica_analyzer / dva_analyzer"]
+    CE6 --> CE7{"should_run_soh / degradation / ica / dva / soc?\n(analysis_router.py)"}
+    CE7 -->|yes| CE8["analysis_runner.py calls:\nsoh_engine / degradation_analyzer / ica_analyzer / dva_analyzer / soc_estimator"]
     CE7 -->|no| CE9["skip that analysis, print reason"]
     CE8 --> CE10["console summary:\nhealth score, grade, lifecycle status"]
 
@@ -218,20 +209,7 @@ normalization + all four diagnostics into one run.
 
 ---
 
-## 4. Orphaned code — not dead, but not wired into any pipeline
-
-These files are fully implemented and runnable on their own (each has its own
-`if __name__ == "__main__":`), but **none of the three entry points
-(`basic_analysis.py`, `capability_engine.py`, `dataset_profiler.py`) ever
-import or call them.** They only run if someone manually executes that exact
-file.
-
-- `core/cycle_feature_adapter.py` — cycle-life dataset schema detector/adapter
-- `analytics/soc/soc_estimator.py` — coulomb-counting SOC estimator
-- `analytics/soc/soc_capability_checker.py` — checks if SOC estimation is feasible
-- `analytics/ica_dva/ica_dva_capability_checker.py` — checks if ICA/DVA is feasible before running them
-
-## 5. One-liner reference: what each block does, input → output
+## 4. One-liner reference: what each block does, input → output
 
 ### Entry points
 
@@ -251,8 +229,7 @@ file.
 | `capability_engine.py` (core functions) | Checks which analyses are possible given the columns present | Normalized DataFrame | Capability report dict (available vs. unavailable analyses + reasons) |
 | `execution_engine.py` | Runs whichever analyses the capability report says are possible, and prints the final intelligence summary | Capability report + normalized DataFrame | Console summary (health score, grade A–F, lifecycle status) |
 | `analysis_router.py` | Pure yes/no gatekeeping logic for each analysis type | Capability report | Booleans (`should_run_soh`, etc.) / list of analysis names |
-| `analysis_runner.py` | Thin dispatcher that calls the real analyzer modules and plots results | Normalized DataFrame | Calls into `soh_engine`, `degradation_analyzer`, `ica_analyzer`, `dva_analyzer` |
-| `cycle_feature_adapter.py` 🟡 | Detects "cycle-life" style datasets and derives per-cycle features from them | Dataset file path (standalone only) | Adapted dataset + consistency report (not wired into the main pipeline) |
+| `analysis_runner.py` | Thin dispatcher that calls the real analyzer modules and plots results | Normalized DataFrame | Calls into `soh_engine`, `degradation_analyzer`, `ica_analyzer`, `dva_analyzer`, `soc_estimator` |
 | `saved_column_mappings.json` | Stores manually-confirmed column-name decisions so you aren't asked again | — (data file) | Read/written by `column_mapper.py` |
 
 ### analytics/diagnostics/
@@ -268,8 +245,7 @@ file.
 
 | File | What it does | Input | Output |
 |---|---|---|---|
-| `soc_estimator.py` 🟡 | Estimates State of Charge via coulomb counting when no SOC column exists | Dataset file path (standalone only) | SOC results CSV + chart |
-| `soc_capability_checker.py` 🟡 | Checks signal quality to decide if SOC estimation is even feasible | Dataset file path (standalone only) | Console capability report only |
+| `soc_estimator.py` | Estimates State of Charge per cycle from measured capacity, cross-checked against coulomb counting (current integration) | Normalized DataFrame (via `capability_engine.py` path) | SOC results CSV + cycle summary + chart → `outputs/soc_analysis/` |
 
 ### analytics/ica_dva/
 
@@ -277,7 +253,6 @@ file.
 |---|---|---|---|
 | `ica_analyzer.py` | Computes Incremental Capacity Analysis (dQ/dV) curves per cycle | Normalized DataFrame | ICA results CSV + chart |
 | `dva_analyzer.py` | Computes Differential Voltage Analysis (dV/dQ) curves per cycle | Normalized DataFrame | DVA results CSV + chart |
-| `ica_dva_capability_checker.py` 🟡 | Pre-checks if discharge data is clean enough for ICA/DVA | Dataset file path (standalone only) | Console capability report only |
 
 ### analytics/ (other)
 

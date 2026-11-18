@@ -96,3 +96,18 @@ def should_run_dva(
         "Differential Voltage Analysis"
         in available
     )
+
+
+def should_run_soc(
+    capability_report
+):
+    available = (
+        capability_report[
+            "available_analyses"
+        ]
+    )
+
+    return (
+        "Coulomb-Counting SOC Estimation"
+        in available
+    )
