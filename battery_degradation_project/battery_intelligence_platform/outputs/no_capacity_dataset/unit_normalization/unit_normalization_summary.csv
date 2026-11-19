@@ -1,0 +1,2 @@
+already_normalized,normalization_version,input_columns,output_columns,columns_converted,columns_standardized,columns_unchanged,warning_count
+False,1.0,4,5,0,4,0,0

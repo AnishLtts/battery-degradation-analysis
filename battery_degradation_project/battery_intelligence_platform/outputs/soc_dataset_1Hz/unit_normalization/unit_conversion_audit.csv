@@ -1,0 +1,9 @@
+source_column,normalized_source_name,target_column,measurement,source_unit,target_unit,conversion_type,conversion_applied,confidence,valid_numeric_values,status
+Time_s,time_s,time_s,time,s,s,identity,False,High,448872,Standardized without conversion
+Voltage,voltage,Voltage,Unknown,Unknown,Unchanged,none,False,Uncertain,448872,Unrecognized or ambiguous column
+Current,current,Current,Unknown,Unknown,Unchanged,none,False,Uncertain,448872,Unrecognized or ambiguous column
+Temperature,temperature,Temperature,Unknown,Unknown,Unchanged,none,False,Uncertain,448872,Unrecognized or ambiguous column
+SOC_Percent,soc_percent,SOC_Percent,Unknown,Unknown,Unchanged,none,False,Uncertain,448872,Unrecognized or ambiguous column
+Ambient_Temp_C,ambient_temp_c,Ambient_Temp_C,Unknown,Unknown,Unchanged,none,False,Uncertain,448872,Unrecognized or ambiguous column
+Drive_Cycle,drive_cycle,Drive_Cycle,Unknown,Unknown,Unchanged,none,False,Uncertain,0,Unrecognized or ambiguous column
+Source_File,source_file,Source_File,Unknown,Unknown,Unchanged,none,False,Uncertain,0,Unrecognized or ambiguous column

@@ -1,0 +1,14 @@
+source_column,normalized_source_name,target_column,measurement,source_unit,target_unit,conversion_type,conversion_applied,confidence,valid_numeric_values,status
+IR,ir,IR,Unknown,Unknown,Unchanged,none,False,Uncertain,7000,Unrecognized or ambiguous column
+QC,qc,QC,Unknown,Unknown,Unchanged,none,False,Uncertain,7000,Unrecognized or ambiguous column
+QD,qd,QD,Unknown,Unknown,Unchanged,none,False,Uncertain,7000,Unrecognized or ambiguous column
+Tavg,tavg,Tavg,Unknown,Unknown,Unchanged,none,False,Uncertain,7000,Unrecognized or ambiguous column
+Tmin,tmin,Tmin,Unknown,Unknown,Unchanged,none,False,Uncertain,7000,Unrecognized or ambiguous column
+Tmax,tmax,Tmax,Unknown,Unknown,Unchanged,none,False,Uncertain,7000,Unrecognized or ambiguous column
+chargetime,chargetime,chargetime,Unknown,Unknown,Unchanged,none,False,Uncertain,7000,Unrecognized or ambiguous column
+cycle,cycle,cycle,Unknown,Unknown,Unchanged,none,False,Uncertain,7000,Unrecognized or ambiguous column
+battery_id,battery_id,battery_id,Unknown,Unknown,Unchanged,none,False,Uncertain,0,Unrecognized or ambiguous column
+cycle_life,cycle_life,cycle_life,Unknown,Unknown,Unchanged,none,False,Uncertain,7000,Unrecognized or ambiguous column
+C1,c1,C1,Unknown,Unknown,Unchanged,none,False,Uncertain,7000,Unrecognized or ambiguous column
+Q1,q1,Q1,Unknown,Unknown,Unchanged,none,False,Uncertain,7000,Unrecognized or ambiguous column
+C2,c2,C2,Unknown,Unknown,Unchanged,none,False,Uncertain,7000,Unrecognized or ambiguous column

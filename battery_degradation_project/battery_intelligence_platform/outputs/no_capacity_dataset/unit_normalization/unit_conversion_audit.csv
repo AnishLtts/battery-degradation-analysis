@@ -1,0 +1,5 @@
+source_column,normalized_source_name,target_column,measurement,source_unit,target_unit,conversion_type,conversion_applied,confidence,valid_numeric_values,status
+time_s,time_s,time_s,time,s,s,identity,False,High,11,Standardized without conversion
+voltage_v,voltage_v,voltage_v,voltage,V,V,identity,False,High,11,Standardized without conversion
+current_a,current_a,current_a,current,A,A,identity,False,High,11,Standardized without conversion
+temperature_c,temperature_c,temperature_c,temperature,degC,degC,identity,False,High,11,Standardized without conversion

@@ -1,0 +1,3 @@
+warning
+168 cycles contain voltage below 2.50 V.
+"Voltage-rise anomaly screening was not used for safety classification because load transitions, rest periods, and time gaps can create voltage-recovery events."

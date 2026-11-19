@@ -1,0 +1,2 @@
+cycle,record_count,duration_s,minimum_temperature_c,maximum_temperature_c,average_temperature_c,median_temperature_c,temperature_std_c,temperature_rise_c,temperature_rise_category,temperature_slope_c_per_min,high_temperature_records,critical_temperature_records,cold_temperature_records,rapid_heating_records,maximum_temperature_category
+1,448872,15965.093,-20.19044,40.80151,8.382453025628687,9.25395,17.979090735140115,60.99195,Extreme rise,0.07281981275783649,0,0,162779,60045,Elevated

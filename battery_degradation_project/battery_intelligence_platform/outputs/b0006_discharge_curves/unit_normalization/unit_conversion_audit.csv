@@ -1,0 +1,7 @@
+source_column,normalized_source_name,target_column,measurement,source_unit,target_unit,conversion_type,conversion_applied,confidence,valid_numeric_values,status
+cycle,cycle,cycle,Unknown,Unknown,Unchanged,none,False,Uncertain,50285,Unrecognized or ambiguous column
+time_s,time_s,time_s,time,s,s,identity,False,High,50285,Standardized without conversion
+voltage_V,voltage_v,voltage_v,voltage,V,V,identity,False,High,50285,Standardized without conversion
+current_A,current_a,current_a,current,A,A,identity,False,High,50285,Standardized without conversion
+temp_C,temp_c,temperature_c,temperature,degC,degC,identity,False,High,50285,Standardized without conversion
+capacity_Ah,capacity_ah,capacity_ah,capacity,Ah,Ah,identity,False,High,50285,Standardized without conversion

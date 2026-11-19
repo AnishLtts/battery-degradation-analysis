@@ -1,0 +1,4 @@
+severity,warning_type,affected_records,affected_cycles,message
+High,Sub-zero temperature,162779,1,Temperature dropped below 0 C. Charging a lithium-ion cell at sub-zero temperature can increase lithium-plating risk.
+Medium,Rapid temperature rise,60045,1,"Temperature increased faster than 0.1 C per second in one or more records. Check for noisy timestamps, sensor spikes, high current, or abnormal heating."
+Medium,Large within-cycle rise,1,1,One or more cycles showed a temperature rise greater than 20 C.

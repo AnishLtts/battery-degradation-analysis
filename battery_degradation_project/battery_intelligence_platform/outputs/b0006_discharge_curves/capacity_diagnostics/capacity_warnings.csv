@@ -1,0 +1,3 @@
+severity,warning_type,affected_cycles,first_affected_cycle,message
+High,Low capacity retention,108,61,Capacity retention reached or dropped below 80 percent.
+Medium,Abnormal capacity drop,6,8,One or more cycles lost more than 2.0 percent capacity compared with the previous cycle.

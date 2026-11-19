@@ -1,4 +1,4 @@
-cycle,time_s,voltage_v,current_a,temperature_c,capacity_ah,unit_normalization_version,temperature_category,temperature_change_c,temperature_change_rate_c_per_s,high_temperature_flag,critical_temperature_flag,cold_temperature_flag,rapid_heating_flag
+cycle,time_s,voltage_v,current_a,temperature_c,capacity_ah,_unit_normalization_version,temperature_category,temperature_change_c,temperature_change_rate_c_per_s,high_temperature_flag,critical_temperature_flag,cold_temperature_flag,rapid_heating_flag
 1,0.0,4.191491807505295,-0.0049015892074626,24.330033885570543,0.0,1.0,Normal,,,False,False,False,False
 1,16.781,4.190749067776103,-0.0014780055516425,24.325993424022467,2.284821346956428e-05,1.0,Normal,-0.004040461548076024,-0.00024077596973219858,False,False,False,False
 1,35.703,3.9748709122299895,-2.0125283240860368,24.38908512756488,3.061677487183637e-05,1.0,Normal,0.06309170354241189,0.0033343041719909035,False,False,False,False

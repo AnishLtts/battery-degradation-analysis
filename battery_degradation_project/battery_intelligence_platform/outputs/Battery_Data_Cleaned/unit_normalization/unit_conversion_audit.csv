@@ -1,0 +1,10 @@
+source_column,normalized_source_name,target_column,measurement,source_unit,target_unit,conversion_type,conversion_applied,confidence,valid_numeric_values,status
+type,type,type,Unknown,Unknown,Unchanged,none,False,Uncertain,7368,Unrecognized or ambiguous column
+ambient_temperature,ambient_temperature,ambient_temperature,Unknown,Unknown,Unchanged,none,False,Uncertain,7368,Unrecognized or ambiguous column
+battery_id,battery_id,battery_id,Unknown,Unknown,Unchanged,none,False,Uncertain,7368,Unrecognized or ambiguous column
+test_id,test_id,test_id,Unknown,Unknown,Unchanged,none,False,Uncertain,7368,Unrecognized or ambiguous column
+uid,uid,uid,Unknown,Unknown,Unchanged,none,False,Uncertain,7368,Unrecognized or ambiguous column
+filename,filename,filename,Unknown,Unknown,Unchanged,none,False,Uncertain,0,Unrecognized or ambiguous column
+Capacity,capacity,Capacity,Unknown,Unknown,Unchanged,none,False,Uncertain,7368,Unrecognized or ambiguous column
+Re,re,Re,Unknown,Unknown,Unchanged,none,False,Uncertain,7368,Unrecognized or ambiguous column
+Rct,rct,Rct,Unknown,Unknown,Unchanged,none,False,Uncertain,7368,Unrecognized or ambiguous column
