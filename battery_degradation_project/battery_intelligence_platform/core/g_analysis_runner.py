@@ -27,6 +27,7 @@ from analytics.soh_engine import (
     calculate_capacity_soh,
 )
 from analytics.degradation.degradation_analyzer import (
+   validate_degradation_dataset,
    create_cycle_capacity_table,
    calculate_degradation_metrics,
 )
@@ -121,9 +122,13 @@ def run_degradation_analysis(
 ):
     print("🚀 Starting Degradation Analysis")
 
+    validated_data = validate_degradation_dataset(
+        dataframe
+    )
+
     cycle_capacity = (
         create_cycle_capacity_table(
-            dataframe
+            validated_data
         )
     )
 

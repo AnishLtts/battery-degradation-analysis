@@ -324,6 +324,7 @@ def calculate_capacity_soh(
         "cycle",
         "cycle_number",
         "battery_cycle_number",
+        "battery_record_number",
     ):
         if candidate_column in valid_data.columns:
             cycle_column = candidate_column
@@ -332,8 +333,8 @@ def calculate_capacity_soh(
     if cycle_column is None:
         raise ValueError(
             "SOH calculation requires a cycle column. "
-            "No cycle, cycle_number, or battery_cycle_number "
-            "column was found."
+            "No cycle, cycle_number, battery_cycle_number, "
+            "or battery_record_number column was found."
         )
 
     # Keep different batteries separate when a battery identifier
@@ -364,6 +365,11 @@ def calculate_capacity_soh(
             ["battery_id", cycle_column]
         ).reset_index(drop=True)
     )
+
+    if cycle_column != "cycle":
+        cycle_capacity_data = cycle_capacity_data.rename(
+            columns={cycle_column: "cycle"}
+        )
 
     soh_data = calculate_reference_capacity(
         cycle_capacity_data,

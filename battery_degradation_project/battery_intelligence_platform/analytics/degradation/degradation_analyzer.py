@@ -34,6 +34,22 @@ def validate_degradation_dataset(dataframe):
     battery degradation analysis.
     """
 
+    cleaned_data = dataframe.copy()
+
+    # Derive a cycle identifier when the dataset has no literal
+    # "cycle" column but does have test_id or battery_id, which
+    # the capability engine also accepts for this analysis.
+    if "cycle" not in cleaned_data.columns:
+        if "battery_id" in cleaned_data.columns:
+            cleaned_data["cycle"] = (
+                cleaned_data.groupby(
+                    "battery_id"
+                ).cumcount() + 1
+            )
+
+        elif "test_id" in cleaned_data.columns:
+            cleaned_data["cycle"] = cleaned_data["test_id"]
+
     required_columns = [
         "cycle",
         "capacity_ah",
@@ -42,7 +58,7 @@ def validate_degradation_dataset(dataframe):
     missing_columns = [
         column
         for column in required_columns
-        if column not in dataframe.columns
+        if column not in cleaned_data.columns
     ]
 
     if missing_columns:
@@ -50,8 +66,6 @@ def validate_degradation_dataset(dataframe):
             "Degradation analysis requires: "
             + ", ".join(missing_columns)
         )
-
-    cleaned_data = dataframe.copy()
 
     cleaned_data["cycle"] = pd.to_numeric(
         cleaned_data["cycle"],
