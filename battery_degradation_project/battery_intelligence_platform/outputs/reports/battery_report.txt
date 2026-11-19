@@ -2,32 +2,28 @@
 
     DATASET INFORMATION
 
-    Rows: 7,000
+    Rows: 8
 
-   Cycles: 81
+   Cycles: 2
 
    ANALYSES COMPLETED
 
    [AVAILABLE] Dataset Overview
+[AVAILABLE] Voltage Analysis
+[AVAILABLE] Current Analysis
 [AVAILABLE] Thermal Analysis
+[AVAILABLE] Coulomb-Counting SOC Estimation
 [AVAILABLE] Capacity-Based SOH Analysis
 [AVAILABLE] Capacity Degradation Analysis
-[AVAILABLE] Internal Resistance Analysis
-[AVAILABLE] Battery Comparison
+[AVAILABLE] Incremental Capacity Analysis
+[AVAILABLE] Differential Voltage Analysis
+[AVAILABLE] Energy Analysis
+[AVAILABLE] Time-Series Analysis
 
 
    ANALYSES NOT AVAILABLE
-   [UNAVAILABLE] Voltage Analysis
-   Reason: Missing voltage_v
-
-[UNAVAILABLE] Current Analysis
-   Reason: Missing current_a
-
-[UNAVAILABLE] Existing SOC Analysis
+   [UNAVAILABLE] Existing SOC Analysis
    Reason: Missing soc_percent
-
-[UNAVAILABLE] Coulomb-Counting SOC Estimation
-   Reason: Missing time_s, current_a, voltage_v
 
 [UNAVAILABLE] Existing SOH Analysis
    Reason: Missing soh_percent
@@ -38,20 +34,14 @@
 [UNAVAILABLE] Charge-Transfer Resistance Analysis
    Reason: Missing charge_transfer_resistance_ohm
 
-[UNAVAILABLE] Incremental Capacity Analysis
-   Reason: Missing voltage_v
-
-[UNAVAILABLE] Differential Voltage Analysis
-   Reason: Missing voltage_v
-
-[UNAVAILABLE] Energy Analysis
-   Reason: Missing time_s, voltage_v, current_a
-
-[UNAVAILABLE] Time-Series Analysis
-   Reason: Missing time_s
+[UNAVAILABLE] Internal Resistance Analysis
+   Reason: Missing internal_resistance_ohm
 
 [UNAVAILABLE] Drive-Cycle Comparison
    Reason: Missing drive_cycle
+
+[UNAVAILABLE] Battery Comparison
+   Reason: Missing battery_id
 
 [UNAVAILABLE] RUL Analysis
    Reason: Missing rul_cycles
@@ -63,33 +53,36 @@
    
     BATTERY INTELLIGENCE REPORT
 
-    Battery Health Score: 100/100
+    Battery Health Score: 96/100
     Battery Grade: A
     Lifecycle Status: New
 
-    Latest SOH: 99.97%
-    Capacity Loss: 0.03%
+    Latest SOH: 96.00%
+    Capacity Loss: 4.00%
 
-    Initial Capacity: 1.071 Ah
-    Final Capacity: 1.073 Ah
-    Capacity Fade: -0.002 Ah
+    Initial Capacity: 1.500 Ah
+    Final Capacity: 1.440 Ah
+    Capacity Fade: 0.060 Ah
     SOH Graph:
     outputs/graphs/soh_vs_cycle.png
 
     Capacity Graph:
     outputs/graphs/capacity_vs_cycle.png
 
-    ICA Analysis: Not available for this dataset.
+    ICA Analysis: Failed - ICA could not be calculated for any cycle. Check the voltage and capacity measurements.
 
-    DVA Analysis: Not available for this dataset.
+    DVA Analysis: Failed - DVA could not be calculated for any cycle. Check the voltage and capacity measurements.
 
     Degradation Analysis: Completed
-    Degradation Cycles Analyzed: 81
-    Latest SOH: 97.10%
-    Total Capacity Loss: 2.90%
-    Degradation Rate: -0.0453%/cycle
+    Degradation Cycles Analyzed: 2
+    Latest SOH: 96.00%
+    Total Capacity Loss: 4.00%
+    Degradation Rate: -4.0000%/cycle
 
-    SOC Estimation: Not available for this dataset.
+    SOC Estimation: Completed
+    SOC Cycles Analyzed: 2
+    SOC Graph:
+    outputs/soc_analysis/soc_analysis.png
 
     Recommendation: Battery is in excellent condition.
     

@@ -156,40 +156,60 @@ def execute_analysis_plan(
         )
 
     ica_summary = None
+    ica_error = None
 
     if should_run_ica(
         capability_report
     ):
-        ica_summary = run_ica_analysis(
-           normalized_data,
-        )
+        try:
+            ica_summary = run_ica_analysis(
+               normalized_data,
+            )
+        except Exception as error:
+            ica_error = str(error)
+            print(f"⚠️  ICA analysis failed: {ica_error}")
 
     dva_summary = None
+    dva_error = None
 
     if should_run_dva(
         capability_report
     ):
-        dva_summary = run_dva_analysis(
-           normalized_data,
-        )
+        try:
+            dva_summary = run_dva_analysis(
+               normalized_data,
+            )
+        except Exception as error:
+            dva_error = str(error)
+            print(f"⚠️  DVA analysis failed: {dva_error}")
 
     degradation_summary = None
+    degradation_error = None
 
     if should_run_degradation(
         capability_report
     ):
-        _, degradation_summary = run_degradation_analysis(
-            normalized_data,
-        )
+        try:
+            _, degradation_summary = run_degradation_analysis(
+                normalized_data,
+            )
+        except Exception as error:
+            degradation_error = str(error)
+            print(f"⚠️  Degradation analysis failed: {degradation_error}")
 
     soc_cycle_summary = None
+    soc_error = None
 
     if should_run_soc(
         capability_report
     ):
-        soc_cycle_summary = run_soc_analysis(
-           normalized_data,
-        )
+        try:
+            soc_cycle_summary = run_soc_analysis(
+               normalized_data,
+            )
+        except Exception as error:
+            soc_error = str(error)
+            print(f"⚠️  SOC estimation failed: {soc_error}")
 
     if degradation_summary is not None:
         degradation_section = (
@@ -198,6 +218,10 @@ def execute_analysis_plan(
             f"    Latest SOH: {degradation_summary['latest_soh_percent']:.2f}%\n"
             f"    Total Capacity Loss: {degradation_summary['total_capacity_loss_percent']:.2f}%\n"
             f"    Degradation Rate: {degradation_summary['degradation_rate_percent_per_cycle']:.4f}%/cycle"
+        )
+    elif degradation_error is not None:
+        degradation_section = (
+            f"Degradation Analysis: Failed - {degradation_error}"
         )
     else:
         degradation_section = (
@@ -211,6 +235,10 @@ def execute_analysis_plan(
             "    SOC Graph:\n"
             "    outputs/soc_analysis/soc_analysis.png"
         )
+    elif soc_error is not None:
+        soc_section = (
+            f"SOC Estimation: Failed - {soc_error}"
+        )
     else:
         soc_section = (
             "SOC Estimation: Not available for this dataset."
@@ -223,6 +251,10 @@ def execute_analysis_plan(
             "    ICA Graph:\n"
             "    outputs/ica_analysis/ica_analysis.png"
         )
+    elif ica_error is not None:
+        ica_section = (
+            f"ICA Analysis: Failed - {ica_error}"
+        )
     else:
         ica_section = (
             "ICA Analysis: Not available for this dataset."
@@ -234,6 +266,10 @@ def execute_analysis_plan(
             f"    DVA Cycles Analyzed: {dva_summary['cycles_analyzed']}\n"
             "    DVA Graph:\n"
             "    outputs/dva_analysis/dva_analysis.png"
+        )
+    elif dva_error is not None:
+        dva_section = (
+            f"DVA Analysis: Failed - {dva_error}"
         )
     else:
         dva_section = (
