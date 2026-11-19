@@ -1,6 +1,6 @@
 from pathlib import Path
 from datetime import datetime
-from analysis_router import(
+from e_analysis_router import(
     should_run_soh,
     should_run_degradation,
     should_run_ica,
@@ -8,7 +8,7 @@ from analysis_router import(
     should_run_soc,
 
 )
-from analysis_runner import (
+from g_analysis_runner import (
     run_soh_analysis,
     run_degradation_analysis,
     run_ica_analysis,

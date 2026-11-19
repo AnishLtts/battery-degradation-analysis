@@ -24,25 +24,33 @@ from the three real entry points.
 > `analytics/soc/soc_capability_checker.py`, and
 > `analytics/ica_dva/ica_dva_capability_checker.py` — have been deleted from
 > the project entirely (confirmed zero references anywhere before removal).
+>
+> **Update 3:** the 8 `core/` files were renamed with letter prefixes
+> (`a_capability_engine.py` through `h_dataset_profiler.py`) so VS Code's
+> Explorer — which always sorts alphabetically and has no custom-order option —
+> displays them in actual execution order. Numeric prefixes were considered and
+> rejected: Python module names can't start with a digit, so `from
+> 2_file_reader import ...` would be a syntax error. Every import across the
+> project that referenced these modules by name was updated to match.
 
 ---
 
 ## 1. Reading order — open these files in this sequence
 
-The file Explorer sorts alphabetically, which has nothing to do with execution
-order. If you (or anyone new to this project) want to read the source files
-in the actual order they run, pick the entry point you care about and follow
-its numbered list top to bottom.
+The `core/` files are named with letter prefixes (`a_` through `h_`) specifically
+so VS Code's Explorer — which always sorts alphabetically — shows them in actual
+execution order. Files outside `core/` aren't prefixed; pick the entry point you
+care about and follow its numbered list top to bottom.
 
-### A. `dataset_profiler.py` — the full pipeline (recommended starting point)
+### A. `h_dataset_profiler.py` — the full pipeline (recommended starting point)
 
 This is the one that produced `outputs/unit_conversion_test/`'s 5 subfolders.
 
-1. `core/dataset_profiler.py` — start here, this is the script you run
-2. `core/file_reader.py` — loads the dataset file
-3. `core/column_mapper.py` — maps messy column names to standard ones
-4. `core/unit_normalizer.py` — converts units, saves the normalized CSV
-5. *(back in `dataset_profiler.py`)* — checks which diagnostics are possible
+1. `core/h_dataset_profiler.py` — start here, this is the script you run
+2. `core/b_file_reader.py` — loads the dataset file
+3. `core/c_column_mapper.py` — maps messy column names to standard ones
+4. `core/d_unit_normalizer.py` — converts units, saves the normalized CSV
+5. *(back in `h_dataset_profiler.py`)* — checks which diagnostics are possible
 6. `analytics/diagnostics/voltage_diagnostics.py`
 7. `analytics/diagnostics/current_diagnostics.py`
 8. `analytics/diagnostics/temperature_diagnostics.py`
@@ -51,16 +59,16 @@ This is the one that produced `outputs/unit_conversion_test/`'s 5 subfolders.
 Steps 6–9 all run independently off the same normalized data from step 4 —
 none of them depend on each other, so the order among them doesn't matter.
 
-### B. `capability_engine.py` — SOH/degradation/ICA/DVA path
+### B. `a_capability_engine.py` — SOH/degradation/ICA/DVA path
 
-1. `core/capability_engine.py` — start here
-2. `core/file_reader.py`
-3. `core/column_mapper.py`
-4. `core/unit_normalizer.py`
-5. *(back in `capability_engine.py`)* — builds the capability report
-6. `core/execution_engine.py` — decides what to run
-7. `core/analysis_router.py` — pure yes/no gatekeeping
-8. `core/analysis_runner.py` — dispatches to whichever of these apply:
+1. `core/a_capability_engine.py` — start here
+2. `core/b_file_reader.py`
+3. `core/c_column_mapper.py`
+4. `core/d_unit_normalizer.py`
+5. *(back in `a_capability_engine.py`)* — builds the capability report
+6. `core/f_execution_engine.py` — decides what to run
+7. `core/e_analysis_router.py` — pure yes/no gatekeeping
+8. `core/g_analysis_runner.py` — dispatches to whichever of these apply:
    - `analytics/soh_engine.py`
    - `analytics/degradation_analyzer.py`
    - `analytics/ica_dva/ica_analyzer.py`
@@ -70,10 +78,10 @@ none of them depend on each other, so the order among them doesn't matter.
 ### C. `basic_analysis.py` — quick charts only
 
 1. `analytics/basic_analysis.py` — start here
-2. `core/file_reader.py`
-3. `core/column_mapper.py`
+2. `core/b_file_reader.py`
+3. `core/c_column_mapper.py`
 
-(No `unit_normalizer.py` step in this path — charts are drawn from
+(No `d_unit_normalizer.py` step in this path — charts are drawn from
 column-mapped but not unit-converted data.)
 
 ---
@@ -85,17 +93,17 @@ flowchart TD
 
     subgraph ENTRY["ENTRY POINTS — 3 separate CLI scripts, none call each other"]
         BA["basic_analysis.py"]
-        CE["capability_engine.py"]
-        DP["dataset_profiler.py<br/>('MAIN PROGRAM')"]
+        CE["a_capability_engine.py"]
+        DP["h_dataset_profiler.py<br/>('MAIN PROGRAM')"]
     end
 
     subgraph CORE["core/"]
-        FR["file_reader.py"]
-        CM["column_mapper.py"]
-        UN["unit_normalizer.py"]
-        EE["execution_engine.py"]
-        AR["analysis_router.py"]
-        ARUN["analysis_runner.py"]
+        FR["b_file_reader.py"]
+        CM["c_column_mapper.py"]
+        UN["d_unit_normalizer.py"]
+        EE["f_execution_engine.py"]
+        AR["e_analysis_router.py"]
+        ARUN["g_analysis_runner.py"]
     end
 
     subgraph DIAG["analytics/diagnostics/"]
@@ -177,18 +185,18 @@ flowchart TD
     BA2 --> BA3["generate_automatic_graphs()\n(voltage, current, power, SOC, temp-compare)"]
     BA3 --> BA4["save_graphs()\n→ outputs/<name>/*.png"]
 
-    Which -->|"capability_engine.py"| CE1["load_battery_dataset()"]
+    Which -->|"a_capability_engine.py"| CE1["load_battery_dataset()"]
     CE1 --> CE2["detect/apply column mapping"]
     CE2 --> CE3["normalize_dataset_units()"]
     CE3 --> CE4["evaluate_dataset_capabilities()\n→ what CAN this dataset support?"]
     CE4 --> CE5["print_capability_report() + print_execution_plan()"]
     CE5 --> CE6["execute_analysis_plan()"]
-    CE6 --> CE7{"should_run_soh / degradation / ica / dva / soc?\n(analysis_router.py)"}
-    CE7 -->|yes| CE8["analysis_runner.py calls:\nsoh_engine / degradation_analyzer / ica_analyzer / dva_analyzer / soc_estimator"]
+    CE6 --> CE7{"should_run_soh / degradation / ica / dva / soc?\n(e_analysis_router.py)"}
+    CE7 -->|yes| CE8["g_analysis_runner.py calls:\nsoh_engine / degradation_analyzer / ica_analyzer / dva_analyzer / soc_estimator"]
     CE7 -->|no| CE9["skip that analysis, print reason"]
     CE8 --> CE10["console summary:\nhealth score, grade, lifecycle status"]
 
-    Which -->|"dataset_profiler.py (MAIN PROGRAM)"| DP1["load_battery_dataset()"]
+    Which -->|"h_dataset_profiler.py (MAIN PROGRAM)"| DP1["load_battery_dataset()"]
     DP1 --> DP2["normalize_dataset_units() + validate_normalized_ranges()"]
     DP2 --> DP3["save normalized CSV + audit + warnings + summary\n→ outputs/<name>/unit_normalization/"]
     DP3 --> DP4["detect_analysis_capabilities() + build_dataset_profile()"]
@@ -204,7 +212,7 @@ flowchart TD
 ```
 
 **This is exactly how `outputs/unit_conversion_test/` got its 5 subfolders** — that
-was produced by `dataset_profiler.py`, the only script that bundles unit
+was produced by `h_dataset_profiler.py`, the only script that bundles unit
 normalization + all four diagnostics into one run.
 
 ---
@@ -216,21 +224,24 @@ normalization + all four diagnostics into one run.
 | File | What it does | Input | Output |
 |---|---|---|---|
 | `basic_analysis.py` | Generates a quick set of overview charts for any battery dataset | Dataset file path (typed at prompt) | `outputs/<name>/` folder with up to 6 PNGs (voltage, current, power, SOC%, temperature, ambient-temp comparison) |
-| `capability_engine.py` | Figures out which advanced analyses (SOH/Degradation/ICA/DVA) a dataset supports, then runs only those | Dataset file path (typed at prompt) | Console capability report + execution plan + health/grade/lifecycle summary |
-| `dataset_profiler.py` | The real "run everything" pipeline: normalizes units and runs all 4 diagnostics in one go | Dataset file path (typed at prompt) | `outputs/<name>/` folder with `unit_normalization/`, `voltage_diagnostics/`, `current_diagnostics/`, `temperature_diagnostics/`, `capacity_diagnostics/` |
+| `a_capability_engine.py` | Figures out which advanced analyses (SOH/Degradation/ICA/DVA) a dataset supports, then runs only those | Dataset file path (typed at prompt) | Console capability report + execution plan + health/grade/lifecycle summary |
+| `h_dataset_profiler.py` | The real "run everything" pipeline: normalizes units and runs all 4 diagnostics in one go | Dataset file path (typed at prompt) | `outputs/<name>/` folder with `unit_normalization/`, `voltage_diagnostics/`, `current_diagnostics/`, `temperature_diagnostics/`, `capacity_diagnostics/` |
 
 ### core/
 
+Files are named `a_` through `h_` so they list in execution order in the Explorer.
+
 | File | What it does | Input | Output |
 |---|---|---|---|
-| `file_reader.py` | Loads a dataset file safely, validating it exists and isn't empty | File path (.csv/.xlsx/.xls) | pandas DataFrame |
-| `column_mapper.py` | Maps messy/inconsistent column names (e.g. `battery_voltage`, `voltage_mV`) to one standard name per measurement | Raw DataFrame | Column-mapping dict + standardized DataFrame + list of unrecognized columns |
-| `unit_normalizer.py` | Converts each recognized column's unit to a standard unit (mV→V, mA→A, mAh→Ah, min→s, K→°C) | Standardized DataFrame | Normalized DataFrame + conversion audit + warnings + summary |
-| `capability_engine.py` (core functions) | Checks which analyses are possible given the columns present | Normalized DataFrame | Capability report dict (available vs. unavailable analyses + reasons) |
-| `execution_engine.py` | Runs whichever analyses the capability report says are possible, and prints the final intelligence summary | Capability report + normalized DataFrame | Console summary (health score, grade A–F, lifecycle status) |
-| `analysis_router.py` | Pure yes/no gatekeeping logic for each analysis type | Capability report | Booleans (`should_run_soh`, etc.) / list of analysis names |
-| `analysis_runner.py` | Thin dispatcher that calls the real analyzer modules and plots results | Normalized DataFrame | Calls into `soh_engine`, `degradation_analyzer`, `ica_analyzer`, `dva_analyzer`, `soc_estimator` |
-| `saved_column_mappings.json` | Stores manually-confirmed column-name decisions so you aren't asked again | — (data file) | Read/written by `column_mapper.py` |
+| `a_capability_engine.py` (core functions) | Checks which analyses are possible given the columns present | Normalized DataFrame | Capability report dict (available vs. unavailable analyses + reasons) |
+| `b_file_reader.py` | Loads a dataset file safely, validating it exists and isn't empty | File path (.csv/.xlsx/.xls) | pandas DataFrame |
+| `c_column_mapper.py` | Maps messy/inconsistent column names (e.g. `battery_voltage`, `voltage_mV`) to one standard name per measurement | Raw DataFrame | Column-mapping dict + standardized DataFrame + list of unrecognized columns |
+| `d_unit_normalizer.py` | Converts each recognized column's unit to a standard unit (mV→V, mA→A, mAh→Ah, min→s, K→°C) | Standardized DataFrame | Normalized DataFrame + conversion audit + warnings + summary |
+| `e_analysis_router.py` | Pure yes/no gatekeeping logic for each analysis type | Capability report | Booleans (`should_run_soh`, etc.) / list of analysis names |
+| `f_execution_engine.py` | Runs whichever analyses the capability report says are possible, and prints the final intelligence summary | Capability report + normalized DataFrame | Console summary (health score, grade A–F, lifecycle status) |
+| `g_analysis_runner.py` | Thin dispatcher that calls the real analyzer modules and plots results | Normalized DataFrame | Calls into `soh_engine`, `degradation_analyzer`, `ica_analyzer`, `dva_analyzer`, `soc_estimator` |
+| `h_dataset_profiler.py` (see Entry points above) | The real "run everything" pipeline: normalizes units and runs all 4 diagnostics in one go | Dataset file path (typed at prompt) | `outputs/<name>/` folder with diagnostics subfolders |
+| `saved_column_mappings.json` | Stores manually-confirmed column-name decisions so you aren't asked again | — (data file) | Read/written by `c_column_mapper.py` |
 
 ### analytics/diagnostics/
 
@@ -245,7 +256,7 @@ normalization + all four diagnostics into one run.
 
 | File | What it does | Input | Output |
 |---|---|---|---|
-| `soc_estimator.py` | Estimates State of Charge per cycle from measured capacity, cross-checked against coulomb counting (current integration) | Normalized DataFrame (via `capability_engine.py` path) | SOC results CSV + cycle summary + chart → `outputs/soc_analysis/` |
+| `soc_estimator.py` | Estimates State of Charge per cycle from measured capacity, cross-checked against coulomb counting (current integration) | Normalized DataFrame (via `a_capability_engine.py` path) | SOC results CSV + cycle summary + chart → `outputs/soc_analysis/` |
 
 ### analytics/ica_dva/
 

@@ -342,21 +342,21 @@ def print_capability_report(report):
 
 if __name__ == "__main__":
 
-    from execution_engine import (
+    from f_execution_engine import (
     execute_analysis_plan,
     )
-    from file_reader import load_battery_dataset
+    from b_file_reader import load_battery_dataset
 
-    from column_mapper import (
+    from c_column_mapper import (
         apply_column_mapping,
         detect_column_mapping,
     )
 
-    from unit_normalizer import (
+    from d_unit_normalizer import (
         normalize_dataset_units,
     )
 
-    from analysis_router import (
+    from e_analysis_router import (
         print_execution_plan,
     )
 

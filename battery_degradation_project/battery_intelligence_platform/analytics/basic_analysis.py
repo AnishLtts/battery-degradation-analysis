@@ -12,8 +12,8 @@ CORE_FOLDER = PLATFORM_FOLDER / "core"
 
 sys.path.insert(0, str(CORE_FOLDER))
 
-from file_reader import load_battery_dataset
-from column_mapper import (
+from b_file_reader import load_battery_dataset
+from c_column_mapper import (
     apply_column_mapping,
     detect_column_mapping,
 )

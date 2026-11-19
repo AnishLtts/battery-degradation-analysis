@@ -16,7 +16,7 @@ PLATFORM_FOLDER = CORE_FOLDER.parent
 
 sys.path.insert(0, str(CORE_FOLDER))
 
-from file_reader import load_battery_dataset
+from b_file_reader import load_battery_dataset
 
 
 # ============================================================

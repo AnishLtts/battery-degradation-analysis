@@ -1092,7 +1092,7 @@ def print_mapping_report(
 # ============================================================
 
 if __name__ == "__main__":
-    from file_reader import (
+    from b_file_reader import (
         load_battery_dataset,
     )
 
