@@ -153,15 +153,12 @@ def calculate_degradation_metrics(cycle_capacity):
 
     results = cycle_capacity.copy()
 
-    reference_count = min(
-        5,
-        len(results),
-    )
-
+    # Use the highest capacity observed across the whole run as
+    # the reference so SOH/capacity retention is bounded at
+    # <= 100% by construction, consistent with soh_engine.py.
     reference_capacity = (
         results["usable_capacity_ah"]
-        .head(reference_count)
-        .median()
+        .max()
     )
 
     if reference_capacity <= 0:

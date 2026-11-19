@@ -56,10 +56,8 @@ def run_soh_analysis(
 
     import matplotlib.pyplot as plt
 
-    graphs_folder = Path(
-        "battery_degradation_project/"
-        "battery_intelligence_platform/"
-        "outputs/graphs"
+    graphs_folder = (
+        PROJECT_ROOT / "outputs" / "graphs"
     )
 
     graphs_folder.mkdir(
@@ -67,12 +65,40 @@ def run_soh_analysis(
         exist_ok=True,
     )
 
+    out_of_range_count = (
+        soh_results["soh_percent"] > 100
+    ).sum()
+
+    if out_of_range_count > 0:
+        print(
+            f"⚠️  {out_of_range_count} SOH record(s) exceed 100% "
+            f"(that battery's reference capacity was derived from "
+            f"its own noisiest readings, not a true rated capacity)."
+        )
+
     plt.figure(figsize=(10, 5))
 
-    plt.plot(
-    soh_results["cycle"],
-    soh_results["soh_percent"],
-    linewidth=2,
+    if "battery_id" in soh_results.columns:
+        for _, battery_data in soh_results.groupby(
+            "battery_id"
+        ):
+            plt.plot(
+                battery_data["cycle"],
+                battery_data["soh_percent"],
+                linewidth=1,
+            )
+    else:
+        plt.plot(
+            soh_results["cycle"],
+            soh_results["soh_percent"],
+            linewidth=2,
+        )
+
+    plt.axhline(
+        100,
+        color="black",
+        linewidth=0.8,
+        linestyle="--",
     )
 
     plt.title(
@@ -87,7 +113,7 @@ def run_soh_analysis(
 
     plt.grid(True)
     plt.savefig(
-    "battery_degradation_project/battery_intelligence_platform/outputs/graphs/soh_vs_cycle.png"
+        graphs_folder / "soh_vs_cycle.png"
     )
 
     plt.show()
@@ -95,11 +121,21 @@ def run_soh_analysis(
     # Capacity vs Cycle Graph
     plt.figure(figsize=(10, 5))
 
-    plt.plot(
-    soh_results["cycle"],
-    soh_results["capacity_ah"],
-    linewidth=2,
-    )
+    if "battery_id" in soh_results.columns:
+        for _, battery_data in soh_results.groupby(
+            "battery_id"
+        ):
+            plt.plot(
+                battery_data["cycle"],
+                battery_data["capacity_ah"],
+                linewidth=1,
+            )
+    else:
+        plt.plot(
+            soh_results["cycle"],
+            soh_results["capacity_ah"],
+            linewidth=2,
+        )
 
     plt.title(
     "Capacity vs Cycle"
@@ -113,10 +149,10 @@ def run_soh_analysis(
 
     plt.grid(True)
     plt.savefig(
-    "battery_degradation_project/battery_intelligence_platform/outputs/graphs/capacity_vs_cycle.png"
-)
+        graphs_folder / "capacity_vs_cycle.png"
+    )
     plt.show()
-    return soh_results 
+    return soh_results
 def run_degradation_analysis(
     dataframe,
 ):
@@ -143,7 +179,7 @@ def run_degradation_analysis(
         f"{len(degradation_results)}"
     )
 
-    return degradation_results
+    return degradation_results, degradation_summary
 
 
 def run_ica_analysis(
@@ -163,9 +199,7 @@ def run_ica_analysis(
     )
 
     output_folder = (
-        "battery_degradation_project/"
-        "battery_intelligence_platform/"
-        "outputs/ica_analysis"
+        PROJECT_ROOT / "outputs" / "ica_analysis"
     )
 
     save_ica_results(
@@ -179,6 +213,8 @@ def run_ica_analysis(
         f"✅ ICA cycles analyzed: "
         f"{ica_summary['cycles_analyzed']}"
     )
+
+    return ica_summary
 
 
 def run_dva_analysis(
@@ -198,9 +234,7 @@ def run_dva_analysis(
     )
 
     output_folder = (
-        "battery_degradation_project/"
-        "battery_intelligence_platform/"
-        "outputs/dva_analysis"
+        PROJECT_ROOT / "outputs" / "dva_analysis"
     )
 
     save_dva_results(
@@ -214,6 +248,8 @@ def run_dva_analysis(
         f"✅ DVA cycles analyzed: "
         f"{dva_summary['cycles_analyzed']}"
     )
+
+    return dva_summary
 
 
 def run_soc_analysis(
@@ -236,9 +272,7 @@ def run_soc_analysis(
     )
 
     output_folder = (
-        "battery_degradation_project/"
-        "battery_intelligence_platform/"
-        "outputs/soc_analysis"
+        PROJECT_ROOT / "outputs" / "soc_analysis"
     )
 
     save_soc_results(
@@ -251,3 +285,5 @@ def run_soc_analysis(
         f"✅ SOC cycles analyzed: "
         f"{cycle_summary['cycle'].nunique()}"
     )
+
+    return cycle_summary

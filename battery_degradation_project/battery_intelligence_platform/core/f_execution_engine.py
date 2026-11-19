@@ -1,5 +1,10 @@
 from pathlib import Path
 from datetime import datetime
+
+PLATFORM_FOLDER = (
+    Path(__file__).resolve().parent.parent
+)
+
 from e_analysis_router import(
     should_run_soh,
     should_run_degradation,
@@ -138,6 +143,103 @@ def execute_analysis_plan(
          print(
         f"Capacity Fade: {capacity_fade:.3f} Ah"
          )
+    if latest_soh >= 90:
+        recommendation = "Battery is in excellent condition."
+    elif latest_soh >= 80:
+        recommendation = "Battery is healthy and suitable for continued use."
+    elif latest_soh >= 70:
+        recommendation = "Battery is degraded and should be monitored."
+    else:
+        recommendation = (
+            "Battery is approaching end-of-life "
+            "and replacement should be evaluated."
+        )
+
+    ica_summary = None
+
+    if should_run_ica(
+        capability_report
+    ):
+        ica_summary = run_ica_analysis(
+           normalized_data,
+        )
+
+    dva_summary = None
+
+    if should_run_dva(
+        capability_report
+    ):
+        dva_summary = run_dva_analysis(
+           normalized_data,
+        )
+
+    degradation_summary = None
+
+    if should_run_degradation(
+        capability_report
+    ):
+        _, degradation_summary = run_degradation_analysis(
+            normalized_data,
+        )
+
+    soc_cycle_summary = None
+
+    if should_run_soc(
+        capability_report
+    ):
+        soc_cycle_summary = run_soc_analysis(
+           normalized_data,
+        )
+
+    if degradation_summary is not None:
+        degradation_section = (
+            "Degradation Analysis: Completed\n"
+            f"    Degradation Cycles Analyzed: {degradation_summary['cycles_analyzed']}\n"
+            f"    Latest SOH: {degradation_summary['latest_soh_percent']:.2f}%\n"
+            f"    Total Capacity Loss: {degradation_summary['total_capacity_loss_percent']:.2f}%\n"
+            f"    Degradation Rate: {degradation_summary['degradation_rate_percent_per_cycle']:.4f}%/cycle"
+        )
+    else:
+        degradation_section = (
+            "Degradation Analysis: Not available for this dataset."
+        )
+
+    if soc_cycle_summary is not None:
+        soc_section = (
+            "SOC Estimation: Completed\n"
+            f"    SOC Cycles Analyzed: {soc_cycle_summary['cycle'].nunique()}\n"
+            "    SOC Graph:\n"
+            "    outputs/soc_analysis/soc_analysis.png"
+        )
+    else:
+        soc_section = (
+            "SOC Estimation: Not available for this dataset."
+        )
+
+    if ica_summary is not None:
+        ica_section = (
+            "ICA Analysis: Completed\n"
+            f"    ICA Cycles Analyzed: {ica_summary['cycles_analyzed']}\n"
+            "    ICA Graph:\n"
+            "    outputs/ica_analysis/ica_analysis.png"
+        )
+    else:
+        ica_section = (
+            "ICA Analysis: Not available for this dataset."
+        )
+
+    if dva_summary is not None:
+        dva_section = (
+            "DVA Analysis: Completed\n"
+            f"    DVA Cycles Analyzed: {dva_summary['cycles_analyzed']}\n"
+            "    DVA Graph:\n"
+            "    outputs/dva_analysis/dva_analysis.png"
+        )
+    else:
+        dva_section = (
+            "DVA Analysis: Not available for this dataset."
+        )
+
     run_timestamp = datetime.now().strftime(
     "%Y-%m-%d %H:%M:%S"
 )
@@ -205,18 +307,18 @@ def execute_analysis_plan(
     Capacity Graph:
     outputs/graphs/capacity_vs_cycle.png
 
-    ICA Analysis: Completed
-    ICA Cycles Analyzed: 168
-    ICA Graph:
-    outputs/ica_analysis/ica_analysis.png
+    {ica_section}
 
-    DVA Analysis: Completed
-    DVA Cycles Analyzed: 168
-    DVA Graph:
-    outputs/dva_analysis/dva_analysis.png
+    {dva_section}
+
+    {degradation_section}
+
+    {soc_section}
+
+    Recommendation: {recommendation}
     """
-    reports_folder = Path(
-    "battery_degradation_project/battery_intelligence_platform/outputs/reports"
+    reports_folder = (
+        PLATFORM_FOLDER / "outputs" / "reports"
     )
 
     reports_folder.mkdir(
@@ -250,6 +352,7 @@ def execute_analysis_plan(
             "Initial Capacity",
             "Final Capacity",
             "Capacity Fade",
+            "Recommendation",
         ],
         "Value": [
             health_score,
@@ -260,6 +363,7 @@ def execute_analysis_plan(
             initial_capacity,
             final_capacity,
             capacity_fade,
+            recommendation,
         ],
     }
 )
@@ -271,47 +375,9 @@ def execute_analysis_plan(
     print(
     f"Summary saved: {reports_folder / 'battery_summary.csv'}"
 )
-    if latest_soh >= 90:
-         recommendation = "Battery is in excellent condition."
-    elif latest_soh >= 80:
-         recommendation = "Battery is healthy and suitable for continued use."
-    elif latest_soh >= 70:
-         recommendation = "Battery is degraded and should be monitored."
-    else:
-         recommendation = (
-            "Battery is approaching end-of-life "
-            "and replacement should be evaluated."
-        )
 
     print(
         f"Recommendation: {recommendation}"
        )
-    if should_run_degradation(
-        capability_report
-    ):
-        run_degradation_analysis(
-            normalized_data,
-        )
-
-    if should_run_ica(
-        capability_report
-    ):
-        run_ica_analysis(
-           normalized_data,
-        )
-
-    if should_run_dva(
-        capability_report
-    ):
-        run_dva_analysis(
-           normalized_data,
-        )
-
-    if should_run_soc(
-        capability_report
-    ):
-        run_soc_analysis(
-           normalized_data,
-        )
 
     print("=" * 60)

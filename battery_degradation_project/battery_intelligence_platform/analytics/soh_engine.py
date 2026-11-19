@@ -154,8 +154,9 @@ def calculate_reference_capacity(
     If rated_capacity_ah is supplied, the same user-supplied
     reference is used for all batteries.
 
-    Otherwise, the median of the highest plausible capacity
-    records is calculated separately for every battery.
+    Otherwise, the highest plausible capacity record is used
+    as the reference, calculated separately for every battery,
+    so SOH is bounded at <= 100% by construction.
     """
 
     data_with_reference = dataframe.copy()
@@ -179,11 +180,6 @@ def calculate_reference_capacity(
         )
 
         return data_with_reference
-
-    initial_records = max(
-        1,
-        int(initial_records),
-    )
 
     if "battery_id" in data_with_reference.columns:
         reference_rows = []
@@ -209,16 +205,12 @@ def calculate_reference_capacity(
             if plausible_data.empty:
                 plausible_data = battery_data.copy()
 
-            # Use the median of the highest plausible capacity values
-            candidate_count = min(
-                max(initial_records, 5),
-                len(plausible_data),
-            )
-
+            # Use the highest plausible capacity value as the
+            # reference so SOH is bounded at <= 100% by
+            # construction (no reading can exceed its own max).
             reference_capacity = (
                 plausible_data["capacity_ah"]
-                .nlargest(candidate_count)
-                .median()
+                .max()
             )
 
             reference_rows.append(
@@ -241,8 +233,7 @@ def calculate_reference_capacity(
     else:
         reference_capacity = (
             data_with_reference["capacity_ah"]
-            .head(initial_records)
-            .median()
+            .max()
         )
 
         data_with_reference["reference_capacity_ah"] = (
@@ -250,8 +241,7 @@ def calculate_reference_capacity(
         )
 
     data_with_reference["reference_source"] = (
-        "Median of the highest plausible capacity records "
-        "for each battery"
+        "Maximum plausible capacity record for each battery"
     )
 
     return data_with_reference

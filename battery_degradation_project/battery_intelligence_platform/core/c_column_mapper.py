@@ -109,6 +109,7 @@ COLUMN_ALIASES = {
         "surface_temperature_c",
         "case_temperature",
         "case_temperature_c",
+        "tavg",
     ],
 
     "ambient_temperature_c": [
@@ -149,6 +150,7 @@ COLUMN_ALIASES = {
         "battery_capacity_ah",
         "cumulative_capacity",
         "cumulative_capacity_ah",
+        "qd",
     ],
 
     "cycle": [
@@ -290,6 +292,7 @@ COLUMN_ALIASES = {
         "dcir_ohm",
         "cell_resistance",
         "cell_resistance_ohm",
+        "ir",
     ],
 
     "rul_cycles": [
