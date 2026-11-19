@@ -17,6 +17,9 @@ from c_column_mapper import (
     apply_column_mapping,
     detect_column_mapping,
 )
+from d_unit_normalizer import (
+    normalize_dataset_units,
+)
 
 
 def prepare_plot_data(dataframe, maximum_points=10000):
@@ -499,9 +502,18 @@ if __name__ == "__main__":
             mapping,
         )
 
+        (
+            normalized_data,
+            conversion_audit,
+            normalization_warnings,
+            normalization_summary,
+        ) = normalize_dataset_units(
+            standardized_data
+        )
+
         generated_figures = (
             generate_automatic_graphs(
-                standardized_data
+                normalized_data
             )
         )
 

@@ -80,9 +80,7 @@ none of them depend on each other, so the order among them doesn't matter.
 1. `analytics/basic_analysis.py` — start here
 2. `core/b_file_reader.py`
 3. `core/c_column_mapper.py`
-
-(No `d_unit_normalizer.py` step in this path — charts are drawn from
-column-mapped but not unit-converted data.)
+4. `core/d_unit_normalizer.py` — converts units before graphing
 
 ---
 
@@ -131,6 +129,7 @@ flowchart TD
 
     BA --> FR
     BA --> CM
+    BA --> UN
 
     CE --> FR
     CE --> CM
@@ -182,7 +181,8 @@ flowchart TD
 
     Which -->|"basic_analysis.py"| BA1["load_battery_dataset()"]
     BA1 --> BA2["detect_column_mapping() + apply_column_mapping()"]
-    BA2 --> BA3["generate_automatic_graphs()\n(voltage, current, power, SOC, temp-compare)"]
+    BA2 --> BAU["normalize_dataset_units()"]
+    BAU --> BA3["generate_automatic_graphs()\n(voltage, current, power, SOC, temp-compare)"]
     BA3 --> BA4["save_graphs()\n→ outputs/<name>/*.png"]
 
     Which -->|"a_capability_engine.py"| CE1["load_battery_dataset()"]
@@ -223,7 +223,7 @@ normalization + all four diagnostics into one run.
 
 | File | What it does | Input | Output |
 |---|---|---|---|
-| `basic_analysis.py` | Generates a quick set of overview charts for any battery dataset | Dataset file path (typed at prompt) | `outputs/<name>/` folder with up to 6 PNGs (voltage, current, power, SOC%, temperature, ambient-temp comparison) |
+| `basic_analysis.py` | Generates a quick set of overview charts for any battery dataset (now unit-normalized first, so non-standard units like mV/mA/min/K are handled) | Dataset file path (typed at prompt) | `outputs/<name>/` folder with up to 6 PNGs (voltage, current, power, SOC%, temperature, ambient-temp comparison) |
 | `a_capability_engine.py` | Figures out which advanced analyses (SOH/Degradation/ICA/DVA) a dataset supports, then runs only those | Dataset file path (typed at prompt) | Console capability report + execution plan + health/grade/lifecycle summary |
 | `h_dataset_profiler.py` | The real "run everything" pipeline: normalizes units and runs all 4 diagnostics in one go | Dataset file path (typed at prompt) | `outputs/<name>/` folder with `unit_normalization/`, `voltage_diagnostics/`, `current_diagnostics/`, `temperature_diagnostics/`, `capacity_diagnostics/` |
 
