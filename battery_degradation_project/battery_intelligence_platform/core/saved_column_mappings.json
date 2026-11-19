@@ -1,4 +1,13 @@
 {
+    "c1": "rul_cycles",
+    "c2": null,
+    "chargetime": "soh_percent",
+    "cycle_life": "voltage_v",
+    "q1": "ambient_temperature_c",
+    "qc": null,
     "speed_kmph": null,
+    "tmax": null,
+    "tmin": null,
+    "uid": "soc_percent",
     "unit_normalization_version": null
 }

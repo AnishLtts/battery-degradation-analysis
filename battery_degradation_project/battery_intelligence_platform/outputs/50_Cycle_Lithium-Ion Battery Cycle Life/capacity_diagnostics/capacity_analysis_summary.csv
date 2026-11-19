@@ -1,0 +1,11 @@
+metric,value,unit
+Total cycles analyzed,81.0,cycles
+Initial capacity,1.0786781,Ah
+Latest capacity,1.0664879,Ah
+Total capacity loss,0.01219020000000004,Ah
+Total capacity loss percentage,1.1301054503655905,%
+Latest capacity retention,98.86989454963441,%
+Capacity degradation rate,-0.0004975316847335194,Ah per cycle
+Retention degradation rate,-0.046124203757684196,% per cycle
+Abnormal capacity drops,1.0,cycles
+First cycle at or below 80 percent,,cycle
