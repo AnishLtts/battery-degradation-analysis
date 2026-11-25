@@ -2,9 +2,9 @@
 
     DATASET INFORMATION
 
-    Rows: 8
+    Rows: 50,285
 
-   Cycles: 2
+   Cycles: 168
 
    ANALYSES COMPLETED
 
@@ -53,36 +53,42 @@
    
     BATTERY INTELLIGENCE REPORT
 
-    Battery Health Score: 96/100
-    Battery Grade: A
-    Lifecycle Status: New
+    Battery Health Score: 71/100
+    Battery Grade: C
+    Lifecycle Status: Aging
 
-    Latest SOH: 96.00%
-    Capacity Loss: 4.00%
+    Latest SOH: 71.29%
+    Capacity Loss: 28.71%
 
-    Initial Capacity: 1.500 Ah
-    Final Capacity: 1.440 Ah
-    Capacity Fade: 0.060 Ah
+    Initial Capacity: 1.862 Ah
+    Final Capacity: 1.328 Ah
+    Capacity Fade: 0.535 Ah
     SOH Graph:
     outputs/graphs/soh_vs_cycle.png
 
     Capacity Graph:
     outputs/graphs/capacity_vs_cycle.png
 
-    ICA Analysis: Failed - ICA could not be calculated for any cycle. Check the voltage and capacity measurements.
+    ICA Analysis: Completed
+    ICA Cycles Analyzed: 168
+    ICA Graph:
+    outputs/ica_analysis/ica_analysis.png
 
-    DVA Analysis: Failed - DVA could not be calculated for any cycle. Check the voltage and capacity measurements.
+    DVA Analysis: Completed
+    DVA Cycles Analyzed: 168
+    DVA Graph:
+    outputs/dva_analysis/dva_analysis.png
 
     Degradation Analysis: Completed
-    Degradation Cycles Analyzed: 2
-    Latest SOH: 96.00%
-    Total Capacity Loss: 4.00%
-    Degradation Rate: -4.0000%/cycle
+    Degradation Cycles Analyzed: 168
+    Latest SOH: 71.29%
+    Total Capacity Loss: 28.71%
+    Degradation Rate: -0.2085%/cycle
 
     SOC Estimation: Completed
-    SOC Cycles Analyzed: 2
+    SOC Cycles Analyzed: 168
     SOC Graph:
     outputs/soc_analysis/soc_analysis.png
 
-    Recommendation: Battery is in excellent condition.
+    Recommendation: Battery is degraded and should be monitored.
     
