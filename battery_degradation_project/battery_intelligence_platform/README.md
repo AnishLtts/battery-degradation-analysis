@@ -18,6 +18,13 @@ Run these commands from this folder (`battery_intelligence_platform`). The code 
 python core/a_capability_engine.py
 ```
 
+On Windows, set UTF-8 output first, especially if you redirect the output to a file. Without it, the script can fail with a `'charmap' codec` error when it prints check-mark characters:
+
+```
+set PYTHONIOENCODING=utf-8
+python core/a_capability_engine.py
+```
+
 The script asks for a dataset path. Enter the **full** path to a battery CSV, for example:
 
 ```
