@@ -151,7 +151,7 @@ class BatteryApp(tk.Tk):
         self.run_button.config(state="disabled")
         self.status_var.set("Running analysis... this can take a few minutes.")
         self._set_log("")
-        self.notebook.select(3)  # show the log while it runs
+        self.notebook.select(2)  # show the Run log tab while it runs
 
         thread = threading.Thread(target=self._run_pipeline, args=(dataset,), daemon=True)
         thread.start()
