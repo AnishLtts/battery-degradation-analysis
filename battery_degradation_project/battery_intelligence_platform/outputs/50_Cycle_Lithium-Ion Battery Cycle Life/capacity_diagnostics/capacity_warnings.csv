@@ -1,3 +1,0 @@
-severity,warning_type,affected_cycles,first_affected_cycle,message
-Medium,Abnormal capacity drop,1,53.0,One or more cycles lost more than 2.0 percent capacity compared with the previous cycle.
-Information,Capacity above default EOL level,0,,Latest capacity retention remains above the default 80 percent end-of-life reference.

@@ -1,8 +1,0 @@
-source_column,normalized_source_name,target_column,measurement,source_unit,target_unit,conversion_type,conversion_applied,confidence,valid_numeric_values,status
-vehicle_id,vehicle_id,vehicle_id,Unknown,Unknown,Unchanged,none,False,Uncertain,0,Unrecognized or ambiguous column
-timestamp,timestamp,timestamp,Unknown,Unknown,Unchanged,none,False,Uncertain,0,Unrecognized or ambiguous column
-soc_percent,soc_percent,soc_percent,Unknown,Unknown,Unchanged,none,False,Uncertain,10,Unrecognized or ambiguous column
-battery_voltage,battery_voltage,battery_voltage,Unknown,Unknown,Unchanged,none,False,Uncertain,10,Unrecognized or ambiguous column
-pack_current,pack_current,pack_current,Unknown,Unknown,Unchanged,none,False,Uncertain,10,Unrecognized or ambiguous column
-speed_kmph,speed_kmph,speed_kmph,Unknown,Unknown,Unchanged,none,False,Uncertain,10,Unrecognized or ambiguous column
-ambient_temp_c,ambient_temp_c,ambient_temp_c,Unknown,Unknown,Unchanged,none,False,Uncertain,10,Unrecognized or ambiguous column

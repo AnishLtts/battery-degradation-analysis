@@ -1,3 +1,0 @@
-warning
-2 cycles contain fewer than 10 voltage measurements.
-"Voltage-rise anomaly screening was not used for safety classification because load transitions, rest periods, and time gaps can create voltage-recovery events."

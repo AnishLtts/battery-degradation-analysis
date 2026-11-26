@@ -1,5 +1,0 @@
-warning
-81 cycles contain voltage above 4.25 V.
-52 cycles have end voltage greater than start voltage. Verify record ordering or operation direction.
-29 cycles contain fewer than 10 voltage measurements.
-"Voltage-rise anomaly screening was not used for safety classification because load transitions, rest periods, and time gaps can create voltage-recovery events."

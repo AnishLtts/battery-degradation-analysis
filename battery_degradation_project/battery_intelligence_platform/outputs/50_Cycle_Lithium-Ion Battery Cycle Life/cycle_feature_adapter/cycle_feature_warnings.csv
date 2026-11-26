@@ -1,4 +1,0 @@
-warning
-The charge-time unit is not confirmed. The values are retained without conversion.
-"Ambiguous columns were preserved without mapping: C1, Q1, C2."
-Conflicting cycle_life targets were found for 1 battery or batteries: b3c23. These batteries remain available for descriptive analytics but are marked ineligible for supervised cycle-life ML training.

@@ -1,7 +1,0 @@
-source_column,normalized_source_name,target_column,measurement,source_unit,target_unit,conversion_type,conversion_applied,confidence,valid_numeric_values,status
-cycle,cycle,cycle,Unknown,Unknown,Unchanged,none,False,Uncertain,8,Unrecognized or ambiguous column
-voltage_mV,voltage_mv,voltage_v,voltage,mV,V,divide_1000,True,High,8,Converted and standardized
-current_mA,current_ma,current_a,current,mA,A,divide_1000,True,High,8,Converted and standardized
-capacity_mAh,capacity_mah,capacity_ah,capacity,mAh,Ah,divide_1000,True,High,8,Converted and standardized
-time_min,time_min,time_s,time,min,s,multiply_60,True,High,8,Converted and standardized
-temperature_K,temperature_k,temperature_c,temperature,K,degC,kelvin_to_celsius,True,High,8,Converted and standardized

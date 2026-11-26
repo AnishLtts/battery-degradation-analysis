@@ -1,2 +1,0 @@
-cycles_analyzed,reference_capacity_ah,initial_capacity_ah,latest_capacity_ah,latest_soh_percent,total_capacity_loss_percent,degradation_rate_ah_per_cycle,degradation_rate_percent_per_cycle,observed_80_percent_eol_cycle,predicted_80_percent_eol_cycle
-168,1.841298762332212,1.8624538022263504,1.3278285886596763,72.11369582293273,27.886304177067274,-0.003882814146224143,-0.21087366296309906,106,110.9652184908288

@@ -1,2 +1,0 @@
-severity,warning_type,affected_records,affected_cycles,message
-Medium,Rapid temperature rise,6,6,"Temperature increased faster than 0.1 C per second in one or more records. Check for noisy timestamps, sensor spikes, high current, or abnormal heating."

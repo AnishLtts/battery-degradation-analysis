@@ -1,2 +1,0 @@
-cycle,record_count,duration_s,minimum_temperature_c,maximum_temperature_c,average_temperature_c,median_temperature_c,temperature_std_c,temperature_rise_c,temperature_rise_category,temperature_slope_c_per_min,high_temperature_records,critical_temperature_records,cold_temperature_records,rapid_heating_records,maximum_temperature_category
-1,11,100,25.0,27.8,26.38181818181818,26.4,0.944264985920988,2.8000000000000007,Stable,1.7072727272727306,0,0,0,0,Normal

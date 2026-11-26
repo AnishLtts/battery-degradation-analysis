@@ -1,2 +1,0 @@
-dataset_type,total_rows,battery_count,unique_cycle_values,minimum_records_per_battery,maximum_records_per_battery,median_records_per_battery,minimum_cycles_per_battery,maximum_cycles_per_battery,median_cycles_per_battery,duplicate_battery_cycle_rows,cycle_life_ml_eligible_batteries,cycle_life_ml_ineligible_batteries
-Multi-battery cycle-level feature dataset,7000,140,81,50,50,50.0,50,50,50.0,0,139,1

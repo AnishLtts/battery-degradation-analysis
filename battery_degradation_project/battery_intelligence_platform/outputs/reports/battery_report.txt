@@ -25,6 +25,9 @@
    [UNAVAILABLE] Existing SOC Analysis
    Reason: Missing soc_percent
 
+[UNAVAILABLE] Coulomb-Counting Capacity Estimate
+   Reason: Missing soc_percent
+
 [UNAVAILABLE] Existing SOH Analysis
    Reason: Missing soh_percent
 
@@ -89,6 +92,8 @@
     SOC Cycles Analyzed: 168
     SOC Graph:
     outputs/soc_analysis/soc_analysis.png
+
+    Coulomb-Counting Capacity Estimate: Not available for this dataset.
 
     Recommendation: Battery is degraded and should be monitored.
     
