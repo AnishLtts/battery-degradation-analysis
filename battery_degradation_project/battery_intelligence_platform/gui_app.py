@@ -38,6 +38,17 @@ MAX_IMAGE_WIDTH = 900
 MAX_IMAGE_HEIGHT = 600
 
 
+def _format_value(text):
+    """Round long decimals to 2 places so the summary is easy to read."""
+    try:
+        number = float(text)
+    except (TypeError, ValueError):
+        return text
+    if number.is_integer():
+        return str(int(number))
+    return f"{number:.2f}"
+
+
 class BatteryApp(tk.Tk):
     def __init__(self):
         super().__init__()
@@ -219,7 +230,9 @@ class BatteryApp(tk.Tk):
             return
         with SUMMARY_CSV.open(encoding="utf-8", newline="") as handle:
             for row in csv.DictReader(handle):
-                self.summary_table.insert("", "end", values=(row.get("Metric", ""), row.get("Value", "")))
+                self.summary_table.insert(
+                    "", "end", values=(row.get("Metric", ""), _format_value(row.get("Value", "")))
+                )
 
     def _load_report(self):
         self.report_text.config(state="normal")
