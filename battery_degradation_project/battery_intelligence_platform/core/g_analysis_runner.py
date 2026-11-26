@@ -3,6 +3,7 @@
  #   create_cycle_capacity_table,
   #  calculate_degradation_metrics,
 #)
+import os
 import sys
 from pathlib import Path
 
@@ -13,6 +14,16 @@ PROJECT_ROOT = (
 
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.append(str(PROJECT_ROOT))
+
+
+def get_output_root():
+    """
+    Folder where this run writes its results. The GUI and the command
+    line set BATTERY_OUTPUT_ROOT to outputs/<dataset name>, so each
+    dataset keeps its own charts and reports. Falls back to outputs/.
+    """
+    configured = os.environ.get("BATTERY_OUTPUT_ROOT")
+    return Path(configured) if configured else PROJECT_ROOT / "outputs"
 
 from analytics.ica_dva.ica_analyzer import (
     analyze_ica,
@@ -57,7 +68,7 @@ def run_soh_analysis(
     import matplotlib.pyplot as plt
 
     graphs_folder = (
-        PROJECT_ROOT / "outputs" / "graphs"
+        get_output_root() /"graphs"
     )
 
     graphs_folder.mkdir(
@@ -199,7 +210,7 @@ def run_ica_analysis(
     )
 
     output_folder = (
-        PROJECT_ROOT / "outputs" / "ica_analysis"
+        get_output_root() /"ica_analysis"
     )
 
     save_ica_results(
@@ -234,7 +245,7 @@ def run_dva_analysis(
     )
 
     output_folder = (
-        PROJECT_ROOT / "outputs" / "dva_analysis"
+        get_output_root() /"dva_analysis"
     )
 
     save_dva_results(
@@ -272,7 +283,7 @@ def run_soc_analysis(
     )
 
     output_folder = (
-        PROJECT_ROOT / "outputs" / "soc_analysis"
+        get_output_root() /"soc_analysis"
     )
 
     save_soc_results(
@@ -324,7 +335,7 @@ def run_coulomb_capacity_analysis(
     )
 
     output_folder = (
-        PROJECT_ROOT / "outputs" / "capacity_estimate"
+        get_output_root() /"capacity_estimate"
     )
     output_folder.mkdir(
         parents=True,

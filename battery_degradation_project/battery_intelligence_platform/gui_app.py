@@ -3,7 +3,9 @@ Battery Intelligence Platform - desktop GUI.
 
 Lets you pick a battery dataset, runs the existing analysis pipeline
 (core/a_capability_engine.py) in the background, and shows the summary,
-the charts, and the run log. Uses only the Python standard library
+the charts, and the run log. Each dataset's results are kept in
+outputs/<dataset name>/, so the summary and charts always belong to the
+dataset shown in the Dataset box. Uses only the Python standard library
 (tkinter) plus the packages in requirements.txt.
 
 Run from this folder:
@@ -23,19 +25,33 @@ PLATFORM_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = PLATFORM_DIR / "outputs"
 PIPELINE_SCRIPT = PLATFORM_DIR / "core" / "a_capability_engine.py"
 PROJECT_DATA_DIR = PLATFORM_DIR.parent  # where the sample battery CSVs live
-SUMMARY_CSV = OUTPUT_DIR / "reports" / "battery_summary.csv"
-REPORT_TXT = OUTPUT_DIR / "reports" / "battery_report.txt"
 
-CHARTS = {
-    "SOH vs cycle": OUTPUT_DIR / "graphs" / "soh_vs_cycle.png",
-    "Capacity vs cycle": OUTPUT_DIR / "graphs" / "capacity_vs_cycle.png",
-    "ICA (dQ/dV)": OUTPUT_DIR / "ica_analysis" / "ica_analysis.png",
-    "DVA (dV/dQ)": OUTPUT_DIR / "dva_analysis" / "dva_analysis.png",
-    "SOC estimate": OUTPUT_DIR / "soc_analysis" / "soc_analysis.png",
-}
+CHART_NAMES = [
+    "SOH vs cycle",
+    "Capacity vs cycle",
+    "ICA (dQ/dV)",
+    "DVA (dV/dQ)",
+    "SOC estimate",
+]
 
 MAX_IMAGE_WIDTH = 900
 MAX_IMAGE_HEIGHT = 600
+
+
+def run_folder_for(dataset_path):
+    """Folder that holds the results for one dataset."""
+    return OUTPUT_DIR / Path(dataset_path).stem
+
+
+def charts_for(run_dir):
+    """Chart file for each chart name, inside one dataset's folder."""
+    return {
+        "SOH vs cycle": run_dir / "graphs" / "soh_vs_cycle.png",
+        "Capacity vs cycle": run_dir / "graphs" / "capacity_vs_cycle.png",
+        "ICA (dQ/dV)": run_dir / "ica_analysis" / "ica_analysis.png",
+        "DVA (dV/dQ)": run_dir / "dva_analysis" / "dva_analysis.png",
+        "SOC estimate": run_dir / "soc_analysis" / "soc_analysis.png",
+    }
 
 
 def _format_value(text):
@@ -58,11 +74,13 @@ class BatteryApp(tk.Tk):
 
         self.dataset_var = tk.StringVar()
         self.status_var = tk.StringVar(value="Choose a dataset and press Run.")
-        self.chart_var = tk.StringVar(value=list(CHARTS)[0])
+        self.chart_var = tk.StringVar(value=CHART_NAMES[0])
         self.photo = None  # keep a reference so Tk does not discard the image
         self.running = False
+        self.run_dir = None  # results folder of the dataset currently shown
 
         self._build_widgets()
+        self._select_dataset_from_box()
         self._show_existing_results()
 
     # ------------------------------------------------------------ layout
@@ -106,7 +124,7 @@ class BatteryApp(tk.Tk):
         chart_box = ttk.Combobox(
             chart_bar,
             textvariable=self.chart_var,
-            values=list(CHARTS),
+            values=CHART_NAMES,
             state="readonly",
             width=30,
         )
@@ -127,7 +145,7 @@ class BatteryApp(tk.Tk):
         # Bottom bar
         bottom = ttk.Frame(self, padding=(10, 0, 10, 10))
         bottom.pack(fill="x")
-        ttk.Button(bottom, text="Open outputs folder", command=self.open_outputs).pack(
+        ttk.Button(bottom, text="Open results folder", command=self.open_outputs).pack(
             side="left"
         )
         ttk.Button(bottom, text="Refresh results", command=self._show_existing_results).pack(
@@ -147,6 +165,18 @@ class BatteryApp(tk.Tk):
         )
         if path:
             self.dataset_var.set(path)
+            self._select_dataset_from_box()
+            self._show_existing_results()
+
+    def _select_dataset_from_box(self):
+        """Point the results view at the dataset named in the Dataset box."""
+        typed = self.dataset_var.get().strip().strip('"')
+        if not typed:
+            self.run_dir = None
+            return
+        candidates = [Path(typed), PROJECT_DATA_DIR / typed]
+        dataset_path = next((c for c in candidates if c.is_file()), None)
+        self.run_dir = run_folder_for(dataset_path) if dataset_path else None
 
     def start_run(self):
         if self.running:
@@ -166,6 +196,7 @@ class BatteryApp(tk.Tk):
             return
         dataset = str(dataset_path.resolve())
         self.dataset_var.set(dataset)
+        self.run_dir = run_folder_for(dataset)
 
         self.running = True
         self.run_button.config(state="disabled")
@@ -173,11 +204,17 @@ class BatteryApp(tk.Tk):
         self._set_log("")
         self.notebook.select(2)  # show the Run log tab while it runs
 
-        thread = threading.Thread(target=self._run_pipeline, args=(dataset,), daemon=True)
+        thread = threading.Thread(
+            target=self._run_pipeline, args=(dataset, self.run_dir), daemon=True
+        )
         thread.start()
 
-    def _run_pipeline(self, dataset):
-        env = dict(os.environ, PYTHONIOENCODING="utf-8")
+    def _run_pipeline(self, dataset, run_dir):
+        env = dict(
+            os.environ,
+            PYTHONIOENCODING="utf-8",
+            BATTERY_OUTPUT_ROOT=str(run_dir),
+        )
         try:
             result = subprocess.run(
                 [sys.executable, str(PIPELINE_SCRIPT)],
@@ -219,16 +256,26 @@ class BatteryApp(tk.Tk):
         self.log_text.config(state="disabled")
 
     def _show_existing_results(self):
+        self._select_dataset_from_box()
         self._load_summary()
         self._load_report()
         self.show_chart()
 
+    def _summary_file(self):
+        return self.run_dir / "reports" / "battery_summary.csv" if self.run_dir else None
+
+    def _report_file(self):
+        return self.run_dir / "reports" / "battery_report.txt" if self.run_dir else None
+
     def _load_summary(self):
         self.summary_table.delete(*self.summary_table.get_children())
-        if not SUMMARY_CSV.exists():
-            self.summary_table.insert("", "end", values=("No results yet", "Run an analysis"))
+        summary = self._summary_file()
+        if summary is None or not summary.exists():
+            self.summary_table.insert(
+                "", "end", values=("No results for this dataset yet", "Run an analysis")
+            )
             return
-        with SUMMARY_CSV.open(encoding="utf-8", newline="") as handle:
+        with summary.open(encoding="utf-8", newline="") as handle:
             for row in csv.DictReader(handle):
                 self.summary_table.insert(
                     "", "end", values=(row.get("Metric", ""), _format_value(row.get("Value", "")))
@@ -237,14 +284,19 @@ class BatteryApp(tk.Tk):
     def _load_report(self):
         self.report_text.config(state="normal")
         self.report_text.delete("1.0", "end")
-        if REPORT_TXT.exists():
-            self.report_text.insert("1.0", REPORT_TXT.read_text(encoding="utf-8", errors="replace"))
+        report = self._report_file()
+        if report is not None and report.exists():
+            self.report_text.insert("1.0", report.read_text(encoding="utf-8", errors="replace"))
         self.report_text.config(state="disabled")
 
     def show_chart(self):
-        path = CHARTS[self.chart_var.get()]
+        if self.run_dir is None:
+            self.chart_label.config(image="", text="Choose a dataset to see its charts.")
+            self.photo = None
+            return
+        path = charts_for(self.run_dir)[self.chart_var.get()]
         if not path.exists():
-            self.chart_label.config(image="", text=f"No chart yet:\n{path.name}")
+            self.chart_label.config(image="", text=f"No chart for this dataset:\n{path.name}")
             self.photo = None
             return
         image = tk.PhotoImage(file=str(path))
@@ -260,10 +312,13 @@ class BatteryApp(tk.Tk):
         self.chart_label.config(image=self.photo, text="")
 
     def open_chart_file(self):
-        self._open_path(CHARTS[self.chart_var.get()])
+        if self.run_dir is None:
+            messagebox.showinfo("No dataset", "Choose a dataset first.")
+            return
+        self._open_path(charts_for(self.run_dir)[self.chart_var.get()])
 
     def open_outputs(self):
-        self._open_path(OUTPUT_DIR)
+        self._open_path(self.run_dir if self.run_dir is not None else OUTPUT_DIR)
 
     def _open_path(self, path):
         if not path.exists():

@@ -21,6 +21,7 @@ from g_analysis_runner import (
     run_dva_analysis,
     run_soc_analysis,
     run_coulomb_capacity_analysis,
+    get_output_root,
 )
 
 def execute_analysis_plan(
@@ -395,7 +396,7 @@ def execute_analysis_plan(
     Recommendation: {recommendation}
     """
     reports_folder = (
-        PLATFORM_FOLDER / "outputs" / "reports"
+        get_output_root() / "reports"
     )
 
     reports_folder.mkdir(

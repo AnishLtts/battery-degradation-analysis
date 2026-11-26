@@ -377,6 +377,14 @@ if __name__ == "__main__":
         "Paste the full path of a battery dataset: "
     ).strip().strip('"')
 
+    # Each dataset writes to its own outputs/<dataset name>/ folder.
+    import os
+    from pathlib import Path as _Path
+    _platform = _Path(__file__).resolve().parent.parent
+    os.environ["BATTERY_OUTPUT_ROOT"] = str(
+        _platform / "outputs" / _Path(dataset_path).stem
+    )
+
     try:
         battery_data = load_battery_dataset(
             dataset_path
