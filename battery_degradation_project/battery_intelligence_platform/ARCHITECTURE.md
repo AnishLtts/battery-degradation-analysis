@@ -32,6 +32,13 @@ from the three real entry points.
 > rejected: Python module names can't start with a digit, so `from
 > 2_file_reader import ...` would be a syntax error. Every import across the
 > project that referenced these modules by name was updated to match.
+>
+> **Update 4:** three changes since Update 3.
+> - **Coulomb-counting capacity.** `analytics/capacity/coulomb_capacity.py` estimates capacity per recording from current, time, and SOC, for datasets with no capacity column. The capability check (`a_capability_engine.py`), the router (`e_analysis_router.py`), the runner (`g_analysis_runner.py`), and the report (`f_execution_engine.py`) each gained a "Coulomb-Counting Capacity Estimate" step. Its results do not feed SOH.
+> - **Per-dataset output folders.** Each run writes to `outputs/<dataset name>/`. The runner's `get_output_root()` reads the `BATTERY_OUTPUT_ROOT` environment variable, which the GUI and the command line both set. Older shared folders in `outputs/` are no longer written to.
+> - **GUI.** `gui_app.py` is a tkinter window. It runs the pipeline in the background and shows the summary, charts, and run log for the dataset in its Dataset box only.
+>
+> Summary values in the GUI are rounded to 2 decimal places (`_format_value` in `gui_app.py`).
 
 ---
 
@@ -74,6 +81,7 @@ none of them depend on each other, so the order among them doesn't matter.
    - `analytics/ica_dva/ica_analyzer.py`
    - `analytics/ica_dva/dva_analyzer.py`
    - `analytics/soc/soc_estimator.py`
+   - `analytics/capacity/coulomb_capacity.py` (for datasets with no capacity column)
 
 ### C. `basic_analysis.py` — quick charts only
 
@@ -93,6 +101,7 @@ flowchart TD
         BA["basic_analysis.py"]
         CE["a_capability_engine.py"]
         DP["h_dataset_profiler.py<br/>('MAIN PROGRAM')"]
+        GUI["gui_app.py<br/>(desktop window, runs CE)"]
     end
 
     subgraph CORE["core/"]
@@ -115,6 +124,10 @@ flowchart TD
         SE["soc_estimator.py"]
     end
 
+    subgraph CAP["analytics/capacity/"]
+        CC["coulomb_capacity.py"]
+    end
+
     subgraph ICADVA["analytics/ica_dva/"]
         IA["ica_analyzer.py"]
         DA["dva_analyzer.py"]
@@ -131,6 +144,7 @@ flowchart TD
     BA --> CM
     BA --> UN
 
+    GUI --> CE
     CE --> FR
     CE --> CM
     CE --> UN
@@ -142,6 +156,7 @@ flowchart TD
     ARUN --> SOH
     ARUN --> DEG
     ARUN --> SE
+    ARUN --> CC
 
     DP --> FR
     DP --> CM
@@ -241,6 +256,7 @@ Files are named `a_` through `h_` so they list in execution order in the Explore
 | `f_execution_engine.py` | Runs whichever analyses the capability report says are possible, and prints the final intelligence summary | Capability report + normalized DataFrame | Console summary (health score, grade A–F, lifecycle status) |
 | `g_analysis_runner.py` | Thin dispatcher that calls the real analyzer modules and plots results | Normalized DataFrame | Calls into `soh_engine`, `degradation_analyzer`, `ica_analyzer`, `dva_analyzer`, `soc_estimator` |
 | `h_dataset_profiler.py` (see Entry points above) | The real "run everything" pipeline: normalizes units and runs all 4 diagnostics in one go | Dataset file path (typed at prompt) | `outputs/<name>/` folder with diagnostics subfolders |
+| `gui_app.py` (in the platform folder, not `core/`) | Desktop window: choose a dataset, run the pipeline in the background, view that dataset's summary, charts and run log | Dataset file picked in the window | Reads `outputs/<dataset name>/` |
 | `saved_column_mappings.json` | Stores manually-confirmed column-name decisions so you aren't asked again | — (data file) | Read/written by `c_column_mapper.py` |
 
 ### analytics/diagnostics/
@@ -257,6 +273,12 @@ Files are named `a_` through `h_` so they list in execution order in the Explore
 | File | What it does | Input | Output |
 |---|---|---|---|
 | `soc_estimator.py` | Estimates State of Charge per cycle from measured capacity, cross-checked against coulomb counting (current integration) | Normalized DataFrame (via `a_capability_engine.py` path) | SOC results CSV + cycle summary + chart → `outputs/soc_analysis/` |
+
+### analytics/capacity/
+
+| File | What it does | Input | Output |
+|---|---|---|---|
+| `coulomb_capacity.py` | Estimates capacity per recording by coulomb counting: charge moved divided by SOC change. Rejects recordings with under 50% SOC change or inconsistent current/SOC direction | Normalized DataFrame with time, current, SOC (optional grouping by `source_file` or `cycle`) | Per-recording capacity table → `outputs/<dataset>/capacity_estimate/coulomb_capacity_estimates.csv` |
 
 ### analytics/ica_dva/
 

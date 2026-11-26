@@ -33,7 +33,11 @@ C:\path\to\battery_degradation_project\b0005_discharge_curves.csv
 
 A relative path such as `../b0005_discharge_curves.csv` did not work in testing: the script kept waiting for input.
 
-Expected columns are voltage, current, temperature, capacity, time, and cycle. Column names are matched automatically, and unit differences (mV, mA, minutes, K) are converted.
+Column names are matched automatically, and unit differences (mV, mA, minutes, K) are converted. Each analysis runs only if its columns are present, and the report lists which analyses ran and which were skipped:
+
+- **SOH, degradation, ICA, DVA:** need capacity and voltage per cycle.
+- **Coulomb-counting capacity:** needs time, current, and SOC. No capacity column needed.
+- **Datasets missing these columns** are still processed, but the skipped analyses are reported as unavailable.
 
 ## Desktop GUI
 
@@ -45,9 +49,11 @@ python gui_app.py
 
 Click **Browse** to choose a dataset, then **Run analysis**. The window shows the summary, the charts (choose one from the dropdown), and the run log. It uses the same pipeline as the command line, so the results are identical. The GUI uses only tkinter, which ships with Python.
 
+Each dataset has its own results folder, `outputs/<dataset name>/`. The summary and charts always belong to the dataset in the Dataset box. If that dataset hasn't been run, the window says "No results yet" rather than showing another dataset's charts. Some datasets have no ICA, DVA, or SOC results, and the window says so for those charts.
+
 ## Outputs
 
-Results are written to `outputs/`:
+Results are written to `outputs/<dataset name>/`. For example, `b0005_discharge_curves.csv` writes to `outputs/b0005_discharge_curves/`. Inside each dataset folder:
 
 | Folder | Contents |
 |---|---|
@@ -55,8 +61,21 @@ Results are written to `outputs/`:
 | `graphs/` | SOH and capacity vs. cycle charts |
 | `ica_analysis/`, `dva_analysis/` | ICA and DVA curves, peaks per cycle, and charts |
 | `soc_analysis/` | SOC estimates per row and per cycle, and chart |
+| `capacity_estimate/` | Coulomb-counting capacity per recording (only for datasets with SOC data) |
+
+Folders that a dataset doesn't need, such as ICA or DVA for a file with too few voltage points, are not created.
+
+Older shared folders (`outputs/reports/`, `outputs/graphs/`, and so on) come from runs made before per-dataset folders were added. They are no longer updated.
 
 Headline results for the included test file (`b0005_discharge_curves.csv`, 168 cycles): health score 71/100, grade C, SOH 71.29%, capacity loss 28.71%.
+
+## Capacity estimate for datasets without a capacity column
+
+Some datasets have current, time, and SOC but no capacity column. For these, the pipeline estimates capacity by coulomb counting: the charge that moved through the battery divided by the SOC change it caused. Each recording is estimated separately.
+
+- Only recordings with at least 50% SOC change are accepted. Shorter recordings are reported as rejected.
+- Estimates are reported separately. They do not feed the SOH analysis, because a partial recording is not a full capacity measurement.
+- On the included SOC dataset (`soc_dataset_1Hz.csv`), 64 of 69 recordings were accepted, with a mean of 2.98 Ah.
 
 ## Known limitations
 
