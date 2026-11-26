@@ -287,3 +287,79 @@ def run_soc_analysis(
     )
 
     return cycle_summary
+
+# ============================================================
+# COULOMB-COUNTING CAPACITY ESTIMATE
+# ============================================================
+
+def run_coulomb_capacity_analysis(
+    dataframe,
+):
+    """
+    Estimate capacity per recording (or cycle) by coulomb counting
+    against SOC change. Results are reported separately; they do not
+    feed the SOH analysis, because a partial recording is not a full
+    capacity measurement.
+    """
+    from analytics.capacity.coulomb_capacity import (
+        estimate_capacity_from_soc,
+    )
+
+    print(
+        "🚀 Starting Coulomb-Counting Capacity Estimate"
+    )
+
+    group_column = next(
+        (
+            column
+            for column in ("source_file", "cycle")
+            if column in dataframe.columns
+        ),
+        None,
+    )
+
+    estimates = estimate_capacity_from_soc(
+        dataframe,
+        group_column=group_column,
+    )
+
+    output_folder = (
+        PROJECT_ROOT / "outputs" / "capacity_estimate"
+    )
+    output_folder.mkdir(
+        parents=True,
+        exist_ok=True,
+    )
+    estimates.to_csv(
+        output_folder / "coulomb_capacity_estimates.csv",
+        index=False,
+    )
+
+    accepted = estimates[
+        estimates["status"] == "Accepted"
+    ]
+
+    summary = {
+        "recordings_analyzed": int(len(estimates)),
+        "accepted": int(len(accepted)),
+        "rejected": int(len(estimates) - len(accepted)),
+        "mean_capacity_ah": (
+            float(accepted["capacity_ah"].mean())
+            if len(accepted) else None
+        ),
+        "min_capacity_ah": (
+            float(accepted["capacity_ah"].min())
+            if len(accepted) else None
+        ),
+        "max_capacity_ah": (
+            float(accepted["capacity_ah"].max())
+            if len(accepted) else None
+        ),
+    }
+
+    print(
+        f"✅ Coulomb capacity: {summary['accepted']} accepted, "
+        f"{summary['rejected']} rejected"
+    )
+
+    return summary

@@ -46,6 +46,19 @@ ANALYSIS_REQUIREMENTS = {
         ),
     },
 
+    "Coulomb-Counting Capacity Estimate": {
+        "required_all": [
+            "time_s",
+            "current_a",
+            "soc_percent",
+        ],
+        "required_any": [],
+        "description": (
+            "Estimates capacity per recording by coulomb counting "
+            "against SOC change. Needs no capacity column."
+        ),
+    },
+
     "Capacity-Based SOH Analysis": {
         "required_all": ["capacity_ah"],
         "required_any": [],

@@ -11,6 +11,7 @@ from e_analysis_router import(
     should_run_ica,
     should_run_dva,
     should_run_soc,
+    should_run_coulomb_capacity,
 
 )
 from g_analysis_runner import (
@@ -19,6 +20,7 @@ from g_analysis_runner import (
     run_ica_analysis,
     run_dva_analysis,
     run_soc_analysis,
+    run_coulomb_capacity_analysis,
 )
 
 def execute_analysis_plan(
@@ -228,6 +230,43 @@ def execute_analysis_plan(
             "Degradation Analysis: Not available for this dataset."
         )
 
+    capacity_summary = None
+    capacity_error = None
+
+    if should_run_coulomb_capacity(
+        capability_report
+    ):
+        try:
+            capacity_summary = run_coulomb_capacity_analysis(
+                normalized_data,
+            )
+        except Exception as error:
+            capacity_error = str(error)
+            print(f"⚠️  Coulomb capacity estimate failed: {capacity_error}")
+
+    if capacity_summary is not None:
+        capacity_section = (
+            "Coulomb-Counting Capacity Estimate: Completed\n"
+            f"    Recordings Analyzed: {capacity_summary['recordings_analyzed']}\n"
+            f"    Accepted: {capacity_summary['accepted']}  "
+            f"Rejected: {capacity_summary['rejected']}\n"
+            f"    Mean Estimated Capacity: {capacity_summary['mean_capacity_ah']:.3f} Ah\n"
+            "    Details:\n"
+            "    outputs/capacity_estimate/coulomb_capacity_estimates.csv"
+        ) if capacity_summary["mean_capacity_ah"] is not None else (
+            "Coulomb-Counting Capacity Estimate: Completed, but no recording had enough SOC change.\n"
+            "    Details:\n"
+            "    outputs/capacity_estimate/coulomb_capacity_estimates.csv"
+        )
+    elif capacity_error is not None:
+        capacity_section = (
+            f"Coulomb-Counting Capacity Estimate: Failed - {capacity_error}"
+        )
+    else:
+        capacity_section = (
+            "Coulomb-Counting Capacity Estimate: Not available for this dataset."
+        )
+
     if soc_cycle_summary is not None:
         soc_section = (
             "SOC Estimation: Completed\n"
@@ -350,6 +389,8 @@ def execute_analysis_plan(
     {degradation_section}
 
     {soc_section}
+
+    {capacity_section}
 
     Recommendation: {recommendation}
     """

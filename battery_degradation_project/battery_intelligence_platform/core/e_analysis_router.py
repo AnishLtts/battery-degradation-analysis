@@ -98,6 +98,21 @@ def should_run_dva(
     )
 
 
+def should_run_coulomb_capacity(
+    capability_report
+):
+    available = (
+        capability_report[
+            "available_analyses"
+        ]
+    )
+
+    return (
+        "Coulomb-Counting Capacity Estimate"
+        in available
+    )
+
+
 def should_run_soc(
     capability_report
 ):
