@@ -35,12 +35,14 @@ from the three real entry points.
 >
 > **Update 4:** three changes since Update 3.
 > - **Coulomb-counting capacity.** `analytics/capacity/coulomb_capacity.py` estimates capacity per recording from current, time, and SOC, for datasets with no capacity column. The capability check (`a_capability_engine.py`), the router (`e_analysis_router.py`), the runner (`g_analysis_runner.py`), and the report (`f_execution_engine.py`) each gained a "Coulomb-Counting Capacity Estimate" step. Its results do not feed SOH.
-> - **Per-dataset output folders.** Each run writes to `outputs/<dataset name>/`. The runner's `get_output_root()` reads the `BATTERY_OUTPUT_ROOT` environment variable, which the GUI and the command line both set. Older shared folders in `outputs/` are no longer written to.
+> - **Per-dataset output folders.** Each run writes to `outputs/<dataset name>/`. The runner's `get_output_root()` reads the `BATTERY_OUTPUT_ROOT` environment variable, which the GUI and the command line both set. The older shared folders in `outputs/` were removed in Update 5.
 > - **GUI.** `gui_app.py` is a tkinter window. It runs the pipeline in the background and shows the summary, charts, and run log for the dataset in its Dataset box only.
 >
 > Summary values in the GUI are rounded to 2 decimal places (`_format_value` in `gui_app.py`).
 >
 > **Update 5:** two sample datasets were removed because the pipeline produced no battery analysis for them: `ev_fleet_telemetry.csv` (driving log, no cycle or capacity) and `no_capacity_dataset.csv` (11 rows from one short discharge). The remaining sample datasets and what each supports are listed in the README.
+>
+> The old shared output folders (`outputs/reports/`, `outputs/graphs/`, `outputs/ica_analysis/`, `outputs/dva_analysis/`, `outputs/soc_analysis/`, `outputs/capacity_estimate/`) were removed, because each dataset now has its own folder. The helper file `synthetic_known_capacity_truth.csv` was also removed; `synthetic_full_truth.csv` holds the same values.
 
 ---
 

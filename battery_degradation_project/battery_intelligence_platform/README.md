@@ -53,8 +53,6 @@ The sample files are in the `battery_degradation_project` folder, one level up f
 | `unit_conversion_test.csv` | SOH only, 2 cycles (too few for ICA or DVA) |
 | `synthetic_full_truth.csv` | SOH, ICA, DVA, SOC with known true values, for checking the pipeline |
 
-`synthetic_known_capacity_truth.csv` is a small helper file with the true per-cycle values for the synthetic dataset.
-
 ## Desktop GUI
 
 To run the analysis with a window instead of the command line:
@@ -80,8 +78,6 @@ Results are written to `outputs/<dataset name>/`. For example, `b0005_discharge_
 | `capacity_estimate/` | Coulomb-counting capacity per recording (only for datasets with SOC data) |
 
 Folders that a dataset doesn't need, such as ICA or DVA for a file with too few voltage points, are not created.
-
-Older shared folders (`outputs/reports/`, `outputs/graphs/`, and so on) come from runs made before per-dataset folders were added. They are no longer updated.
 
 Headline results for the included test file (`b0005_discharge_curves.csv`, 168 cycles): health score 71/100, grade C, SOH 71.29%, capacity loss 28.71%.
 
