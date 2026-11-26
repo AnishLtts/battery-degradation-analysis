@@ -22,6 +22,7 @@ from tkinter import filedialog, messagebox, ttk
 PLATFORM_DIR = Path(__file__).resolve().parent
 OUTPUT_DIR = PLATFORM_DIR / "outputs"
 PIPELINE_SCRIPT = PLATFORM_DIR / "core" / "a_capability_engine.py"
+PROJECT_DATA_DIR = PLATFORM_DIR.parent  # where the sample battery CSVs live
 SUMMARY_CSV = OUTPUT_DIR / "reports" / "battery_summary.csv"
 REPORT_TXT = OUTPUT_DIR / "reports" / "battery_report.txt"
 
@@ -139,13 +140,21 @@ class BatteryApp(tk.Tk):
     def start_run(self):
         if self.running:
             return
-        dataset = self.dataset_var.get().strip().strip('"')
-        if not dataset:
+        typed = self.dataset_var.get().strip().strip('"')
+        if not typed:
             messagebox.showwarning("No dataset", "Choose a dataset file first.")
             return
-        if not Path(dataset).is_file():
-            messagebox.showerror("File not found", f"Cannot find:\n{dataset}")
+        # Accept a full path, or a bare file name from the project's data folder.
+        candidates = [Path(typed), PROJECT_DATA_DIR / typed]
+        dataset_path = next((c for c in candidates if c.is_file()), None)
+        if dataset_path is None:
+            messagebox.showerror(
+                "File not found",
+                f"Cannot find:\n{typed}\n\nUse Browse... to pick the file.",
+            )
             return
+        dataset = str(dataset_path.resolve())
+        self.dataset_var.set(dataset)
 
         self.running = True
         self.run_button.config(state="disabled")
@@ -170,7 +179,10 @@ class BatteryApp(tk.Tk):
                 env=env,
             )
             output = (result.stdout or "") + (result.stderr or "")
-            ok = result.returncode == 0
+            # The pipeline can exit with code 0 without analysing anything
+            # (for example, when it gets no valid path), so require the
+            # report to have been written.
+            ok = result.returncode == 0 and "Report saved:" in output
         except Exception as error:  # noqa: BLE001 - show any failure to the user
             output = f"Could not start the analysis: {error}"
             ok = False
