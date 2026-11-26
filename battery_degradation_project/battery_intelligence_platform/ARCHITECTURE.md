@@ -39,6 +39,8 @@ from the three real entry points.
 > - **GUI.** `gui_app.py` is a tkinter window. It runs the pipeline in the background and shows the summary, charts, and run log for the dataset in its Dataset box only.
 >
 > Summary values in the GUI are rounded to 2 decimal places (`_format_value` in `gui_app.py`).
+>
+> **Update 5:** two sample datasets were removed because the pipeline produced no battery analysis for them: `ev_fleet_telemetry.csv` (driving log, no cycle or capacity) and `no_capacity_dataset.csv` (11 rows from one short discharge). The remaining sample datasets and what each supports are listed in the README.
 
 ---
 

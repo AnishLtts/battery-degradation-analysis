@@ -39,6 +39,22 @@ Column names are matched automatically, and unit differences (mV, mA, minutes, K
 - **Coulomb-counting capacity:** needs time, current, and SOC. No capacity column needed.
 - **Datasets missing these columns** are still processed, but the skipped analyses are reported as unavailable.
 
+## Sample datasets
+
+The sample files are in the `battery_degradation_project` folder, one level up from this one.
+
+| File | What it gives |
+|---|---|
+| `b0005_discharge_curves.csv` | SOH, ICA, DVA, SOC (168 cycles) |
+| `b0006_discharge_curves.csv` | SOH, ICA, DVA, SOC (168 cycles) |
+| `Battery_Data_Cleaned.csv` | SOH per battery (cycle-level data, no ICA or DVA) |
+| `50_Cycle_Lithium-Ion Battery Cycle Life.csv` | SOH per cycle (per-cycle summary, no voltage curve, so no ICA or DVA) |
+| `soc_dataset_1Hz.csv` | Coulomb-counting capacity per recording (no SOH: no aging data) |
+| `unit_conversion_test.csv` | SOH only, 2 cycles (too few for ICA or DVA) |
+| `synthetic_full_truth.csv` | SOH, ICA, DVA, SOC with known true values, for checking the pipeline |
+
+`synthetic_known_capacity_truth.csv` is a small helper file with the true per-cycle values for the synthetic dataset.
+
 ## Desktop GUI
 
 To run the analysis with a window instead of the command line:
