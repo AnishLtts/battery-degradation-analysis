@@ -1,0 +1,93 @@
+
+
+    DATASET INFORMATION
+
+    Rows: 8
+
+   Cycles: 2
+
+   ANALYSES COMPLETED
+
+   [AVAILABLE] Dataset Overview
+[AVAILABLE] Voltage Analysis
+[AVAILABLE] Current Analysis
+[AVAILABLE] Thermal Analysis
+[AVAILABLE] Coulomb-Counting SOC Estimation
+[AVAILABLE] Capacity-Based SOH Analysis
+[AVAILABLE] Capacity Degradation Analysis
+[AVAILABLE] Incremental Capacity Analysis
+[AVAILABLE] Differential Voltage Analysis
+[AVAILABLE] Energy Analysis
+[AVAILABLE] Time-Series Analysis
+
+
+   ANALYSES NOT AVAILABLE
+   [UNAVAILABLE] Existing SOC Analysis
+   Reason: Missing soc_percent
+
+[UNAVAILABLE] Coulomb-Counting Capacity Estimate
+   Reason: Missing soc_percent
+
+[UNAVAILABLE] Existing SOH Analysis
+   Reason: Missing soh_percent
+
+[UNAVAILABLE] Electrolyte Resistance Analysis
+   Reason: Missing electrolyte_resistance_ohm
+
+[UNAVAILABLE] Charge-Transfer Resistance Analysis
+   Reason: Missing charge_transfer_resistance_ohm
+
+[UNAVAILABLE] Internal Resistance Analysis
+   Reason: Missing internal_resistance_ohm
+
+[UNAVAILABLE] Drive-Cycle Comparison
+   Reason: Missing drive_cycle
+
+[UNAVAILABLE] Battery Comparison
+   Reason: Missing battery_id
+
+[UNAVAILABLE] RUL Analysis
+   Reason: Missing rul_cycles
+
+[UNAVAILABLE] Fault-Label Analysis
+   Reason: Missing fault_label
+
+
+   
+    BATTERY INTELLIGENCE REPORT
+
+    Battery Health Score: 96/100
+    Battery Grade: A
+    Lifecycle Status: New
+
+    Latest SOH: 96.00%
+    Capacity Loss: 4.00%
+
+    Initial Capacity: 1.500 Ah
+    Final Capacity: 1.440 Ah
+    Capacity Fade: 0.060 Ah
+    SOH Graph:
+    outputs/graphs/soh_vs_cycle.png
+
+    Capacity Graph:
+    outputs/graphs/capacity_vs_cycle.png
+
+    ICA Analysis: Failed - ICA could not be calculated for any cycle. Check the voltage and capacity measurements.
+
+    DVA Analysis: Failed - DVA could not be calculated for any cycle. Check the voltage and capacity measurements.
+
+    Degradation Analysis: Completed
+    Degradation Cycles Analyzed: 2
+    Latest SOH: 96.00%
+    Total Capacity Loss: 4.00%
+    Degradation Rate: -4.0000%/cycle
+
+    SOC Estimation: Completed
+    SOC Cycles Analyzed: 2
+    SOC Graph:
+    outputs/soc_analysis/soc_analysis.png
+
+    Coulomb-Counting Capacity Estimate: Not available for this dataset.
+
+    Recommendation: Battery is in excellent condition.
+    

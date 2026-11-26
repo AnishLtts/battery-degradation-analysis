@@ -1,0 +1,3 @@
+cycle,records,duration_s,starting_voltage_v,ending_voltage_v,measured_usable_capacity_ah,integrated_capacity_ah,mean_soc_difference_percent,minimum_soc_percent,maximum_temperature_c
+1,4,900.0,4.2,3.2,1.5,0.5,0.0,0.0,33.0
+2,4,900.0,4.2,3.1,1.44,0.475,0.0,0.0,34.0

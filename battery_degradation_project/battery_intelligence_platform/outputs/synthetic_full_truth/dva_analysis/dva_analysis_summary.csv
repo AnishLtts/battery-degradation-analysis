@@ -1,0 +1,2 @@
+original_records,validated_records,discharge_records,cycles_found,cycles_analyzed,cycles_rejected,graph_cycles
+30000,30000,30000,150,150,0,"1, 30, 60, 90, 120, 150"
