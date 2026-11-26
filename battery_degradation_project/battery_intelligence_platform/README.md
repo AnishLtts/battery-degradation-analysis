@@ -35,6 +35,16 @@ A relative path such as `../b0005_discharge_curves.csv` did not work in testing:
 
 Expected columns are voltage, current, temperature, capacity, time, and cycle. Column names are matched automatically, and unit differences (mV, mA, minutes, K) are converted.
 
+## Desktop GUI
+
+To run the analysis with a window instead of the command line:
+
+```
+python gui_app.py
+```
+
+Click **Browse** to choose a dataset, then **Run analysis**. The window shows the summary, the charts (choose one from the dropdown), and the run log. It uses the same pipeline as the command line, so the results are identical. The GUI uses only tkinter, which ships with Python.
+
 ## Outputs
 
 Results are written to `outputs/`:
