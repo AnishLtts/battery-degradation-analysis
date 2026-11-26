@@ -2,9 +2,9 @@ Metric,Value
 Health Score,71
 Battery Grade,C
 Lifecycle Status,Aging
-Latest SOH,71.29457853249349
-Capacity Loss,28.70542146750651
-Initial Capacity,1.8624538022263504
+Latest SOH,71.29457853249347
+Capacity Loss,28.705421467506525
+Initial Capacity,1.8624538022263506
 Final Capacity,1.3278285886596763
-Capacity Fade,0.534625213566674
+Capacity Fade,0.5346252135666743
 Recommendation,Battery is degraded and should be monitored.
